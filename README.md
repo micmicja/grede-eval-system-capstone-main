@@ -11,6 +11,7 @@ A comprehensive Laravel-based grade evaluation and student dropout risk assessme
 - **Dropout Risk Assessment**: Evaluate student dropout risk based on academic performance and observed behaviors
 - **Grade Weight Settings**: Customize grade category weights (Quiz, Exam, Activity, Project, Recitation, Attendance)
 - **Multi-User Roles**: Admin, Teacher, and Counselor access levels
+- **Login Security**: 3-attempt limit with 5-minute lockout for failed login attempts
 
 ## Prerequisites
 
@@ -176,6 +177,8 @@ php artisan db:seed --class=UserSeeder
 **Default Admin Credentials:**
 - Username: `admin`
 - Password: `admin123456`
+
+**Security Note:** The login system has a 3-attempt limit. After 3 failed login attempts, the account will be locked for 5 minutes.
 
 ### 9. Build Frontend Assets
 
