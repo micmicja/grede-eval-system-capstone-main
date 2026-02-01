@@ -1,59 +1,273 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Grade Evaluation System - Capstone Project
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive Laravel-based grade evaluation and student dropout risk assessment system for educational institutions.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Student Management**: Add, edit, and manage student records
+- **Grade Recording**: Two-step workflow for Quiz, Exam, Activity, Project, and Recitation grades
+- **Attendance Tracking**: Monitor student attendance
+- **Student Performance Reports**: Generate detailed performance reports with weighted scores
+- **Dropout Risk Assessment**: Evaluate student dropout risk based on academic performance and observed behaviors
+- **Grade Weight Settings**: Customize grade category weights (Quiz, Exam, Activity, Project, Recitation, Attendance)
+- **Multi-User Roles**: Admin, Teacher, and Counselor access levels
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prerequisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Before you begin, ensure you have the following installed:
 
-## Learning Laravel
+- **PHP** >= 8.1
+- **Composer** - [Download Composer](https://getcomposer.org/download/)
+- **SQLite** (default database) or MySQL/PostgreSQL
+- **Node.js & npm** - [Download Node.js](https://nodejs.org/)
+- **Git** - [Download Git](https://git-scm.com/downloads)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Installation
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Follow these steps to set up the project after cloning:
 
-## Laravel Sponsors
+### 1. Clone the Repository
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+git clone https://github.com/micmicja/grede-eval-system-capstone-main.git
+cd grede-eval-system-capstone-main
+```
 
-### Premium Partners
+### 2. Install PHP Dependencies
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+composer install
+```
+
+### 3. Install JavaScript Dependencies
+
+```bash
+npm install
+```
+
+### 4. Environment Configuration
+
+Copy the `.env.example` file to create your `.env` file:
+
+```bash
+# Windows (PowerShell)
+copy .env.example .env
+
+# macOS/Linux
+cp .env.example .env
+```
+
+### 5. Generate Application Key
+
+```bash
+php artisan key:generate
+```
+
+### 6. Database Setup
+
+The project uses SQLite by default. Create the database file:
+
+```bash
+# Windows (PowerShell)
+New-Item -ItemType File -Path database\database.sqlite
+
+# macOS/Linux
+touch database/database.sqlite
+```
+
+**Alternative**: If you prefer MySQL or PostgreSQL, update the `.env` file with your database credentials:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database_name
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+### 7. Run Database Migrations
+
+```bash
+php artisan migrate
+```
+
+This will create all necessary tables including:
+- users
+- students
+- quiz_exam_activity (with total_score and quiz_name fields)
+- attendance
+- teacher_settings
+- student_observations
+- evaluations
+- and more...
+
+### 8. Seed the Database (Optional)
+
+Create a default admin user:
+
+```bash
+php artisan db:seed --class=UserSeeder
+```
+
+**Default Admin Credentials:**
+- Username: `admin`
+- Password: `admin123456`
+
+### 9. Build Frontend Assets
+
+```bash
+npm run dev
+```
+
+For production:
+
+```bash
+npm run build
+```
+
+### 10. Start the Development Server
+
+```bash
+php artisan serve
+```
+
+The application will be available at: **http://127.0.0.1:8000**
+
+## Usage
+
+### First-Time Login
+
+1. Navigate to `http://127.0.0.1:8000`
+2. Login with the admin credentials (see step 8 above)
+3. Create teacher and student accounts from the admin dashboard
+
+### Recording Grades
+
+The system uses a two-step workflow:
+
+1. **Step 1**: Create the grade record (Quiz name, total items, date)
+2. **Step 2**: Add scores for all students
+
+This applies to: Quiz, Exam, Activity, Project, and Recitation
+
+### Grade Weight Settings
+
+Navigate to **Settings** to configure grade category weights:
+- Quiz (default: 25%)
+- Exam (default: 25%)
+- Activity (default: 25%)
+- Project (default: 15%)
+- Recitation (default: 5%)
+- Attendance (default: 10%)
+
+**Total must equal 100%**
+
+### Dropout Risk Assessment
+
+The observation feature evaluates student dropout risk based on:
+- Academic performance (weighted average)
+- Observed student behaviors (each behavior adds 5% to risk)
+
+Risk Levels:
+- **Low Risk**: 85-100%
+- **Mid Risk**: 75-84%
+- **Mid High Risk**: 60-74%
+- **High Risk**: 0-59%
+
+## Project Structure
+
+```
+app/
+├── Http/Controllers/    # Application controllers
+├── Models/             # Eloquent models
+└── Helpers/            # Helper functions
+
+resources/
+├── views/              # Blade templates
+├── css/                # Stylesheets
+└── js/                 # JavaScript files
+
+database/
+├── migrations/         # Database migrations
+└── seeders/           # Database seeders
+
+routes/
+└── web.php            # Web routes
+
+public/
+└── img/               # Images and assets
+```
+
+## Key Routes
+
+- `/` - Login page
+- `/Teacher/dashboard` - Teacher dashboard
+- `/Teacher/Quiz/create` - Create new quiz
+- `/Teacher/settings` - Grade weight settings
+- `/Student/report/{id}` - Student performance report
+
+## Troubleshooting
+
+### Database Issues
+
+If you encounter database errors:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+### Permission Errors (Linux/macOS)
+
+```bash
+chmod -R 775 storage bootstrap/cache
+```
+
+### Assets Not Loading
+
+```bash
+npm run build
+php artisan optimize:clear
+```
+
+## Development
+
+### Running Tests
+
+```bash
+php artisan test
+```
+
+### Clearing Cache
+
+```bash
+php artisan optimize:clear
+```
+
+## Technology Stack
+
+- **Backend**: Laravel 11.x
+- **Frontend**: Bootstrap 5, Blade Templates
+- **Database**: SQLite (default), MySQL/PostgreSQL support
+- **JavaScript**: Vanilla JS with AJAX
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Support
+
+For issues and questions, please open an issue on the [GitHub repository](https://github.com/micmicja/grede-eval-system-capstone-main/issues).
+
+---
+
+**Developed as a Capstone Project** - Grade Evaluation System with Dropout Risk Assessment
+
