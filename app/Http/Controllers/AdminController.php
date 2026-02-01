@@ -30,11 +30,25 @@ class AdminController extends Controller
         $teacher_list = $query->get();
         $countedTeacher = $teacher_list->count();
 
+        // Counselor query
+        $counselorQuery = User::where('role', 'councilor');
+
+        // Filter by counselor name
+        if ($request->filled('search_counselor_name')) {
+            $counselorQuery->where('full_name', 'like', '%' . $request->search_counselor_name . '%');
+        }
+
+        $counselor_list = $counselorQuery->get();
+        $countedCounselor = $counselor_list->count();
+
         return view('Admin.Dashboard', [
             'teacher_list' => $teacher_list,
             'countedTeacher' => $countedTeacher,
+            'counselor_list' => $counselor_list,
+            'countedCounselor' => $countedCounselor,
             'search_name' => $request->search_name,
             'search_section' => $request->search_section,
+            'search_counselor_name' => $request->search_counselor_name,
         ]);
     }
 
@@ -97,5 +111,78 @@ class AdminController extends Controller
         $teacher = User::where('role', 'teacher')->findOrFail($id);
         $teacher->delete();
         return redirect()->route('Dashboard.admin')->with('success', 'Teacher deleted successfully.');
+    }
+
+    /**
+     * Show the form for creating a new counselor.
+     */
+    public function createCounselor()
+    {
+        return view('Admin.CreateCounselor');
+    }
+
+    /**
+     * Store a newly created counselor in storage.
+     */
+    public function storeCounselor(Request $request)
+    {
+        $data = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
+            'password' => 'required|string|min:8',
+        ]);
+
+        User::create([
+            'full_name' => $data['full_name'],
+            'username' => $data['username'],
+            'password' => Hash::make($data['password']),
+            'role' => 'councilor',
+        ]);
+
+        return redirect()->route('Dashboard.admin', ['tab' => 'counselors'])->with('success', 'Counselor created successfully.');
+    }
+
+    /**
+     * Show the form for editing the specified counselor.
+     */
+    public function editCounselor(string $id)
+    {
+        $counselor = User::where('role', 'councilor')->findOrFail($id);
+        return view('Admin.EditCounselor', compact('counselor'));
+    }
+
+    /**
+     * Update the specified counselor in storage.
+     */
+    public function updateCounselor(Request $request, string $id)
+    {
+        $counselor = User::where('role', 'councilor')->findOrFail($id);
+
+        $data = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $counselor->id,
+            'password' => 'nullable|string|min:8',
+        ]);
+
+        $counselor->full_name = $data['full_name'];
+        $counselor->username = $data['username'];
+
+        if (!empty($data['password'])) {
+            $counselor->password = Hash::make($data['password']);
+        }
+
+        $counselor->save();
+
+        return redirect()->route('Dashboard.admin', ['tab' => 'counselors'])->with('success', 'Counselor updated successfully.');
+    }
+
+    /**
+     * Remove the specified counselor from storage.
+     */
+    public function destroyCounselor(string $id)
+    {
+        $counselor = User::where('role', 'councilor')->findOrFail($id);
+        $counselor->delete();
+        return redirect()->route('Dashboard.admin', ['tab' => 'counselors'])->with('success', 'Counselor deleted successfully.');
     }
 }

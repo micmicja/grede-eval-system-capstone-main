@@ -35,6 +35,13 @@ Route::middleware(['role:admin'])->prefix('Admin')->group(function () {
     Route::get('/teacher/{id}/edit', [AdminController::class, 'edit'])->name('admin.teacher.edit');
     Route::put('/teacher/{id}', [AdminController::class, 'update'])->name('admin.teacher.update');
     Route::delete('/teacher/{id}', [AdminController::class, 'destroy'])->name('admin.teacher.destroy');
+    
+    // Counselor routes
+    Route::get('/create-counselor', [AdminController::class, 'createCounselor'])->name('create-counselor');
+    Route::post('/create-counselor', [AdminController::class, 'storeCounselor'])->name('admin.counselor.store');
+    Route::get('/counselor/{id}/edit', [AdminController::class, 'editCounselor'])->name('admin.counselor.edit');
+    Route::put('/counselor/{id}', [AdminController::class, 'updateCounselor'])->name('admin.counselor.update');
+    Route::delete('/counselor/{id}', [AdminController::class, 'destroyCounselor'])->name('admin.counselor.destroy');
 });
 
 

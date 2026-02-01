@@ -56,6 +56,15 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-3">
+                <div class="card stats-card bg-success text-white shadow">
+                    <div class="card-body">
+                        <h6 class="text-uppercase fw-bold">Total Counselors</h6>
+                        <p class="display-6 fw-bold mb-0">{{$countedCounselor}}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{--  success message here --}}
@@ -66,83 +75,189 @@
             </div>
         @endif
 
-        {{-- TEACHER LIST TABLE --}}
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Teacher List</h5>
-                <a href="{{ route('create-teacher') }}" class="btn btn-primary btn-sm">Add New Teacher</a>
-            </div>
+        {{-- TABS FOR TEACHERS AND COUNSELORS --}}
+        <ul class="nav nav-tabs mb-3" id="userTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers" type="button" role="tab">
+                    Teachers
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="counselors-tab" data-bs-toggle="tab" data-bs-target="#counselors" type="button" role="tab">
+                    Counselors
+                </button>
+            </li>
+        </ul>
 
-            <div class="card-body">
+        <div class="tab-content" id="userTabsContent">
+            {{-- TEACHERS TAB --}}
+            <div class="tab-pane fade show active" id="teachers" role="tabpanel">
+                {{-- TEACHER LIST TABLE --}}
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Teacher List</h5>
+                        <a href="{{ route('create-teacher') }}" class="btn btn-primary btn-sm">Add New Teacher</a>
+                    </div>
 
-                {{-- Filter Form --}}
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <form method="GET" action="{{ route('Dashboard.admin') }}" class="d-flex gap-3">
-                            <div class="flex-grow-1">
-                                <input type="text" name="search_name" class="form-control" placeholder="Search by teacher name..."
-                                    value="{{ request('search_name') }}">
+                    <div class="card-body">
+
+                        {{-- Filter Form --}}
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <form method="GET" action="{{ route('Dashboard.admin') }}" class="d-flex gap-3">
+                                    <div class="flex-grow-1">
+                                        <input type="text" name="search_name" class="form-control" placeholder="Search by teacher name..."
+                                            value="{{ request('search_name') }}">
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <input type="text" name="search_section" class="form-control" placeholder="Search by section..."
+                                            value="{{ request('search_section') }}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                    <a href="{{ route('Dashboard.admin') }}" class="btn btn-secondary">
+                                        <i class="fas fa-redo"></i> Reset
+                                    </a>
+                                </form>
                             </div>
-                            <div class="flex-grow-1">
-                                <input type="text" name="search_section" class="form-control" placeholder="Search by section..."
-                                    value="{{ request('search_section') }}">
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Search
-                            </button>
-                            <a href="{{ route('Dashboard.admin') }}" class="btn btn-secondary">
-                                <i class="fas fa-redo"></i> Reset
-                            </a>
-                        </form>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Full Name</th>
+                                        <th>Username</th>
+                                        <th>Section</th>
+                                        <th>Subject</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @if ($teacher_list && $teacher_list)
+
+                                        @foreach ($teacher_list as $index => $teacher)
+                                            <tr>
+                                                <td>{{ $index + 1}}</td>
+                                                <td>{{ $teacher->full_name }}</td>
+                                                <td>{{ $teacher->username }}</td>
+                                                <td>{{ $teacher->section }}</td>
+                                                <td>{{ $teacher->subject }}</td>
+                                                <td>
+                                                    <a href="{{ route('admin.teacher.edit', $teacher->id) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+                                                    <form action="{{ route('admin.teacher.destroy', $teacher->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this teacher?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-danger btn-sm">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                        
+                                    @else
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-4">No teachers found.</td>
+                                        </tr>
+                                    @endif
+
+                                </tbody>
+                            </table>
+                        </div>
+
                     </div>
                 </div>
+            </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Full Name</th>
-                                <th>Username</th>
-                                <th>Section</th>
-                                <th>Subject</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
+            {{-- COUNSELORS TAB --}}
+            <div class="tab-pane fade" id="counselors" role="tabpanel">
+                {{-- COUNSELOR LIST TABLE --}}
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Counselor List</h5>
+                        <a href="{{ route('create-counselor') }}" class="btn btn-success btn-sm">Add New Counselor</a>
+                    </div>
 
-                        <tbody>
-                            @if ($teacher_list && $teacher_list)
+                    <div class="card-body">
 
-                                @foreach ($teacher_list as $index => $teacher)
+                        {{-- Filter Form --}}
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <form method="GET" action="{{ route('Dashboard.admin') }}" class="d-flex gap-3">
+                                    <input type="hidden" name="tab" value="counselors">
+                                    <div class="flex-grow-1">
+                                        <input type="text" name="search_counselor_name" class="form-control" placeholder="Search by counselor name..."
+                                            value="{{ request('search_counselor_name') }}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                    <a href="{{ route('Dashboard.admin') }}" class="btn btn-secondary">
+                                        <i class="fas fa-redo"></i> Reset
+                                    </a>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
                                     <tr>
-                                        <td>{{ $index + 1}}</td>
-                                        <td>{{ $teacher->full_name }}</td>
-                                        <td>{{ $teacher->username }}</td>
-                                        <td>{{ $teacher->section }}</td>
-                                        <td>{{ $teacher->subject }}</td>
-                                        <td>
-                                            <a href="{{ route('admin.teacher.edit', $teacher->id) }}" class="btn btn-warning btn-sm me-1">Edit</a>
-                                            <form action="{{ route('admin.teacher.destroy', $teacher->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this teacher?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-danger btn-sm">Delete</button>
-                                            </form>
-                                        </td>
+                                        <th>#</th>
+                                        <th>Full Name</th>
+                                        <th>Username</th>
+                                        <th>Actions</th>
                                     </tr>
-                                @endforeach
-                                
-                            @else
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">No teachers found.</td>
-                                </tr>
-                            @endif
+                                </thead>
 
-                        </tbody>
-                    </table>
+                                <tbody>
+                                    @if ($counselor_list && $counselor_list->count() > 0)
+
+                                        @foreach ($counselor_list as $index => $counselor)
+                                            <tr>
+                                                <td>{{ $index + 1}}</td>
+                                                <td>{{ $counselor->full_name }}</td>
+                                                <td>{{ $counselor->username }}</td>
+                                                <td>
+                                                    <a href="{{ route('admin.counselor.edit', $counselor->id) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+                                                    <form action="{{ route('admin.counselor.destroy', $counselor->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this counselor?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-danger btn-sm">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                        
+                                    @else
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No counselors found.</td>
+                                        </tr>
+                                    @endif
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
                 </div>
-
             </div>
         </div>
 
     </div>
+
+    <script>
+        // Maintain active tab after form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab');
+            
+            if (activeTab === 'counselors') {
+                const counselorsTab = new bootstrap.Tab(document.getElementById('counselors-tab'));
+                counselorsTab.show();
+            }
+        });
+    </script>
 </x-layouts.app>
