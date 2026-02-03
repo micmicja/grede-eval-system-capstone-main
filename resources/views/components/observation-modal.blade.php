@@ -32,6 +32,14 @@
                                 <input type="radio" class="btn-check" name="risk_level" value="High" id="riskHigh{{ $student->id }}" autocomplete="off">
                                 <label class="btn btn-outline-danger" for="riskHigh{{ $student->id }}">High</label>
                             </div>
+                            <style>
+                                /* Mid High button active state */
+                                .btn-check:checked + .btn-outline-orange {
+                                    background-color: #fd7e14 !important;
+                                    border-color: #fd7e14 !important;
+                                    color: white !important;
+                                }
+                            </style>
                             <small class="text-muted d-block mt-2">
                                 Auto-calculated from Quiz (25%), Exam (25%), Activity (25%), Project (15%), Recitation (5%), and Attendance (10%). Each observed behavior reduces the score by 5%.
                             </small>
