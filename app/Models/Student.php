@@ -22,4 +22,10 @@ class Student extends Model
         // Dito natin kinokonekta ang Student sa kanyang mga records
         return $this->hasMany(EvalutionComment::class, 'student_id');
     }
+
+    public function observations(): HasMany
+    {
+        // Relationship to student observations
+        return $this->hasMany(StudentObservation::class, 'student_id');
+    }
 }

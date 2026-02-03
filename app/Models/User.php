@@ -49,6 +49,12 @@ class User extends Authenticatable
         return $this->hasMany(EvalutionComment::class,'teacher_id');
     }
 
+    // Relationship with student observations created by this teacher
+    public function observations()
+    {
+        return $this->hasMany(StudentObservation::class, 'teacher_id');
+    }
+
 
 
     /**

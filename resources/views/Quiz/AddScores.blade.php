@@ -57,7 +57,7 @@
                 <h5 class="mb-0">Enter Scores for All Students</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('quiz.save-scores') }}">
+                <form method="POST" action="{{ route('quiz.save-scores') }}" id="scoresForm">
                     @csrf
                     <input type="hidden" name="quiz_name" value="{{ $quizName }}">
                     <input type="hidden" name="date_taken" value="{{ $dateTaken }}">
@@ -114,3 +114,37 @@
         </div>
     </div>
 </x-layouts.app>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('scoresForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    console.log('Form loaded:', form);
+    
+    form.addEventListener('submit', function(e) {
+        console.log('Form submitting...');
+        console.log('Action:', form.action);
+        console.log('Method:', form.method);
+        
+        // Check if at least one score is entered
+        const scoreInputs = form.querySelectorAll('input[name^="scores"]');
+        let hasScore = false;
+        scoreInputs.forEach(input => {
+            if (input.value && input.value.trim() !== '') {
+                hasScore = true;
+            }
+        });
+        
+        if (!hasScore) {
+            e.preventDefault();
+            alert('Please enter at least one score before saving.');
+            return false;
+        }
+        
+        // Disable button to prevent double submission
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    });
+});
+</script>

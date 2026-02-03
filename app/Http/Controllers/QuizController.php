@@ -56,10 +56,11 @@ class QuizController extends Controller
             'subject' => $student->subject,
             'section' => $student->section,
             'user_id' => $teacher->id,
-            'activity_type' => 'quiz',
+            'activity_type' => 'Quiz',
             'activity_title' => $validated['activity_title'],
             'date_taken' => $validated['date_taken'],
             'score' => $percentage,
+            'weighted_score' => $percentage,
         ]);
 
         return redirect()->back()->with('success', 'Quiz score recorded successfully for ' . $validated['full_name']);
@@ -73,7 +74,7 @@ class QuizController extends Controller
         $student = Student::findOrFail($studentId);
         $quizRecords = Quiz_exam_activity::where('full_name', $student->full_name)
             ->where('user_id', Auth::id())
-            ->where('activity_type', 'quiz')
+            ->where('activity_type', 'Quiz')
             ->orderBy('date_taken', 'desc')
             ->get();
 
@@ -127,6 +128,7 @@ class QuizController extends Controller
                 'activity_title' => $validated['activity_title'],
                 'date_taken' => $validated['date_taken'],
                 'score' => $percentage,
+                'weighted_score' => $percentage,
             ]);
         } else {
             $validated = $request->validate([
@@ -135,6 +137,7 @@ class QuizController extends Controller
                 'score' => 'required|numeric|min:0|max:100',
             ]);
 
+            $validated['weighted_score'] = $validated['score'];
             $quiz->update($validated);
         }
 

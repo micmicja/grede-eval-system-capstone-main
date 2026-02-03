@@ -73,7 +73,10 @@ class StudentController extends Controller
     {
         // Get student data
         $student = Student::findOrFail($studentId);
-        $teacherId = Auth::id();
+        
+        // Use the student's teacher to get their grades
+        // The observation creator might be different from the student's teacher
+        $teacherId = $student->teacher_id;
 
         // Get teacher's custom weights
         $settings = TeacherSetting::where('user_id', $teacherId)->first();
@@ -110,11 +113,11 @@ class StudentController extends Controller
             ->whereBetween('date_taken', [$start->toDateString(), $end->toDateString()])
             ->get();
 
-        $quizRecords = $allActivities->where('activity_type', 'quiz');
-        $examRecords = $allActivities->where('activity_type', 'exam');
-        $activityRecords = $allActivities->where('activity_type', 'activity');
-        $projectRecords = $allActivities->where('activity_type', 'project');
-        $recitationRecords = $allActivities->where('activity_type', 'recitation');
+        $quizRecords = $allActivities->where('activity_type', 'Quiz');
+        $examRecords = $allActivities->where('activity_type', 'Exam');
+        $activityRecords = $allActivities->where('activity_type', 'Activity');
+        $projectRecords = $allActivities->where('activity_type', 'Project');
+        $recitationRecords = $allActivities->where('activity_type', 'Recitation');
 
         // Calculate averages
         $quizCount = $quizRecords->count();

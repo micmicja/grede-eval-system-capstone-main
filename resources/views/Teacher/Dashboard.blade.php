@@ -383,10 +383,17 @@
                                         <td><span class="badge bg-light text-dark border">{{ $student->section }}</span>
                                         </td>
                                         <td>
-                                            {{-- I-check kung may schedule ang student --}}
-                                            @php $activeSched = $student->evaluations->first(); @endphp
+                                            {{-- I-check kung may active schedule ang student from observations (exclude resolved) --}}
+                                            @php 
+                                                $activeSched = $student->observations()
+                                                    ->where('referred_to_councilor', true)
+                                                    ->whereNotNull('scheduled_at')
+                                                    ->where('counseling_status', '!=', 'resolved')
+                                                    ->latest()
+                                                    ->first(); 
+                                            @endphp
 
-                                            @if($activeSched)
+                                            @if($activeSched && $activeSched->scheduled_at)
                                             <div class="text-primary fw-medium small d-flex align-items-center">
                                                 <span class="material-symbols-rounded"
                                                     style="font-size: 18px;">calendar_month</span>

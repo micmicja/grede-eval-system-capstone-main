@@ -157,5 +157,6 @@ Route::middleware(['role:councilor'])->prefix('councilor')->group(function () {
     Route::patch('/status/{id}', [EvalutionCommentController::class, 'updateStatus'])->name('councilor.updateStatus');
     Route::post('/schedule/{id}', [EvalutionCommentController::class, 'setSchedule'])->name('councilor.setSchedule');
     Route::post('/schedule-risk/{id}', [EvalutionCommentController::class, 'scheduleRiskObservation'])->name('councilor.scheduleRiskObservation');
+    Route::patch('/observation/{id}/status', [EvalutionCommentController::class, 'updateObservationStatus'])->name('councilor.updateObservationStatus');
     Route::patch('/councilor/referral/{id}/status', [EvalutionCommentController::class, 'updateStatus'])->name('councilor.updateStatus');
 });

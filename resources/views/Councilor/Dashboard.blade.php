@@ -182,10 +182,20 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge rounded-pill px-3 py-2 {{ $observation->risk_status === 'High Risk' ? 'bg-danger text-white' : 'bg-warning text-dark' }}"
-                                                style="font-size: 11px;">
-                                                {{ $observation->risk_status }}
-                                            </span>
+                                            @if($observation->counseling_status === 'resolved')
+                                                <span class="badge rounded-pill px-3 py-2 bg-success text-white" style="font-size: 11px;">
+                                                    Resolved
+                                                </span>
+                                            @elseif($observation->counseling_status === 'ongoing')
+                                                <span class="badge rounded-pill px-3 py-2 bg-warning text-dark" style="font-size: 11px;">
+                                                    Ongoing
+                                                </span>
+                                            @else
+                                                <span class="badge rounded-pill px-3 py-2 {{ $observation->risk_status === 'High Risk' ? 'bg-danger text-white' : 'bg-warning text-dark' }}"
+                                                    style="font-size: 11px;">
+                                                    {{ $observation->risk_status }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="small fw-semibold {{ $observation->scheduled_at ? 'text-primary' : 'text-muted' }} d-flex align-items-center">
@@ -254,6 +264,19 @@
                                                     <div class="mb-3">
                                                         <p class="small text-muted mb-1">Date Observed:</p>
                                                         <p class="fw-bold mb-0">{{ $observation->created_at->format('M d, Y h:i A') }}</p>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="small fw-bold text-dark mb-1">Update Status:</label>
+                                                        <form action="{{ route('councilor.updateObservationStatus', $observation->id) }}" method="POST" class="d-flex gap-2">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <select name="counseling_status" class="form-select form-select-sm">
+                                                                <option value="pending" {{ $observation->counseling_status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                                                <option value="ongoing" {{ $observation->counseling_status == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
+                                                                <option value="resolved" {{ $observation->counseling_status == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                                            </select>
+                                                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                                                        </form>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer border-0">

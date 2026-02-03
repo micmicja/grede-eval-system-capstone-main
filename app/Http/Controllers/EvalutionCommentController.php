@@ -63,26 +63,57 @@ class EvalutionCommentController extends Controller
         $evaluations = $query->latest()->paginate(15)->withQueryString();
 
         // Get risk-based observations (High Risk and Mid High Risk students)
-        $riskObservations = StudentObservation::with(['student', 'teacher'])
+        $riskObservationsQuery = StudentObservation::with(['student', 'teacher'])
             ->where('referred_to_councilor', true)
-            ->whereIn('risk_status', ['High Risk', 'Mid High Risk'])
-            ->latest()
-            ->get();
+            ->whereIn('risk_status', ['High Risk', 'Mid High Risk']);
 
-        // Kunin ang mga Users na ang role ay 'teacher' (o 'instructor') 
-        // at bilangin ang flagged students gamit ang relationship 'flagCreated'
-        $instructors = User::where('role', 'teacher') // Siguraduhin na 'teacher' ang role name mo
-            ->withCount('flagCreated')
-            ->get();
+        // Apply filters to risk observations
+        if ($request->filled('q')) {
+            $q = $request->query('q');
+            $riskObservationsQuery->where(function ($qbuilder) use ($q) {
+                $qbuilder->whereHas('student', function ($s) use ($q) {
+                    $s->where('full_name', 'like', "%{$q}%");
+                })
+                ->orWhereHas('teacher', function ($t) use ($q) {
+                    $t->where('full_name', 'like', "%{$q}%");
+                });
+            });
+        }
+
+        if ($request->filled('teacher_id')) {
+            $riskObservationsQuery->where('teacher_id', $request->query('teacher_id'));
+        }
+
+        if ($request->filled('status')) {
+            $riskObservationsQuery->where('counseling_status', $request->query('status'));
+        }
+
+        $riskObservations = $riskObservationsQuery->latest()->get();
+
+        // Get teachers with count of their active observations (exclude resolved)
+        $instructors = User::where('role', 'teacher')
+            ->withCount(['observations' => function ($query) {
+                $query->where('referred_to_councilor', true)
+                      ->where('counseling_status', '!=', 'resolved');
+            }])
+            ->get()
+            ->map(function ($teacher) {
+                $teacher->flag_created_count = $teacher->observations_count;
+                return $teacher;
+            });
 
         $stats = [
-            // high_priority should use urgency, not workflow status
-            'high_priority' => EvalutionComment::where('urgency', 'high')->count(),
-            'ongoing' => EvalutionComment::where('status', 'ongoing')->count(),
-            'resolved' => EvalutionComment::where('status', 'resolved')
+            // High priority based on High Risk observations (exclude resolved)
+            'high_priority' => StudentObservation::where('referred_to_councilor', true)
+                ->where('risk_status', 'High Risk')
+                ->where('counseling_status', '!=', 'resolved')
+                ->count(),
+            'ongoing' => StudentObservation::where('counseling_status', 'ongoing')->count(),
+            'resolved' => StudentObservation::where('counseling_status', 'resolved')
                 ->whereMonth('updated_at', now()->month)->count(),
             'at_risk_students' => StudentObservation::where('referred_to_councilor', true)
                 ->whereIn('risk_status', ['High Risk', 'Mid High Risk'])
+                ->where('counseling_status', '!=', 'resolved')
                 ->count(),
         ];
 
@@ -225,5 +256,22 @@ class EvalutionCommentController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Counseling schedule has been set successfully for ' . $observation->student->full_name . '!');
+    }
+
+    /**
+     * Update counseling status for a student observation
+     */
+    public function updateObservationStatus(Request $request, $id)
+    {
+        $request->validate([
+            'counseling_status' => 'required|in:pending,ongoing,resolved',
+        ]);
+
+        $observation = StudentObservation::findOrFail($id);
+        $observation->update([
+            'counseling_status' => $request->counseling_status
+        ]);
+
+        return redirect()->back()->with('success', 'Counseling status updated successfully!');
     }
 }

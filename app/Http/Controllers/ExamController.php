@@ -51,10 +51,11 @@ class ExamController extends Controller
             'subject' => $student->subject,
             'section' => $student->section,
             'user_id' => $teacher->id,
-            'activity_type' => 'exam',
+            'activity_type' => 'Exam',
             'activity_title' => $validated['activity_title'],
             'date_taken' => $validated['date_taken'],
             'score' => $percentage,
+            'weighted_score' => $percentage,
         ]);
 
         return redirect()->back()->with('success', 'Exam score recorded successfully for ' . $validated['full_name']);
@@ -88,6 +89,7 @@ class ExamController extends Controller
                 'activity_title' => $validated['activity_title'],
                 'date_taken' => $validated['date_taken'],
                 'score' => $percentage,
+                'weighted_score' => $percentage,
             ]);
         } else {
             $validated = $request->validate([
@@ -95,6 +97,7 @@ class ExamController extends Controller
                 'date_taken' => 'required|date',
                 'score' => 'required|numeric|min:0|max:100',
             ]);
+            $validated['weighted_score'] = $validated['score'];
             $exam->update($validated);
         }
 
@@ -117,7 +120,7 @@ class ExamController extends Controller
 
         $examRecords = Quiz_exam_activity::where('full_name', $student->full_name)
             ->where('user_id', Auth::id())
-            ->where('activity_type', 'exam')
+            ->where('activity_type', 'Exam')
             ->orderBy('date_taken', 'desc')
             ->get();
 
