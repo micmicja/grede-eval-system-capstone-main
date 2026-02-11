@@ -186,6 +186,7 @@ class ExportController extends Controller
         if ($format === 'word') {
             return $this->generateStudentReportWord(
                 $student,
+                $teacher,
                 $overallScore,
                 $riskStatus,
                 $riskBehaviors,
@@ -195,7 +196,9 @@ class ExportController extends Controller
                 $projectAvg,
                 $recitationAvg,
                 $attendancePercentage,
-                $filename
+                $semester,
+                $year,
+                $riskAssessment
             );
         }
         
@@ -520,44 +523,92 @@ class ExportController extends Controller
     }
 
     // Word generation methods
-    private function generateStudentListWord($students)
+    private function generateStudentListWord($students, $teacher = null)
     {
         $phpWord = new PhpWord();
         
         // Add section
         $section = $phpWord->addSection();
         
-        // Add title
+        // Letterhead
+        $section->addText(
+            'GRADE EVALUATION SYSTEM',
+            ['bold' => true, 'size' => 18, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addText(
+            'Academic Records and Assessment Department',
+            ['size' => 9, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        
+        // Add line
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        
+        // Title
         $section->addText(
             'STUDENT LIST',
-            ['bold' => true, 'size' => 16],
+            ['bold' => true, 'size' => 16, 'color' => '1a237e'],
             ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        
+        if ($teacher) {
+            $section->addText(
+                'Teacher: ' . ($teacher->full_name ?? 'N/A'),
+                ['size' => 10, 'color' => '555555'],
+                ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+            );
+        }
+        
+        $section->addText(
+            'Date: ' . now()->format('F d, Y'),
+            ['size' => 10, 'color' => '555555'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addTextBreak(1);
+        
+        // Summary box
+        $section->addText(
+            'Total Students: ' . $students->count(),
+            ['bold' => true, 'size' => 11, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT]
         );
         $section->addTextBreak(1);
         
         // Create table
         $table = $section->addTable([
             'borderSize' => 6,
-            'borderColor' => '000000',
-            'width' => 100 * 50,
-            'unit' => \PhpOffice\PhpWord\Style\Table::WIDTH_PERCENT
+            'borderColor' => 'd1d5db',
+            'width' => 5000
         ]);
         
-        // Header row
+        // Header row with dark blue background
         $table->addRow(500);
-        $table->addCell(1500, ['bgColor' => 'CCCCCC'])->addText('No.', ['bold' => true]);
-        $table->addCell(3000, ['bgColor' => 'CCCCCC'])->addText('Student ID', ['bold' => true]);
-        $table->addCell(4000, ['bgColor' => 'CCCCCC'])->addText('Name', ['bold' => true]);
-        $table->addCell(3000, ['bgColor' => 'CCCCCC'])->addText('Section', ['bold' => true]);
+        $table->addCell(1500, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(3000, ['bgColor' => '1a237e'])->addText('Student ID', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(4000, ['bgColor' => '1a237e'])->addText('Name', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(3000, ['bgColor' => '1a237e'])->addText('Section', ['bold' => true, 'color' => 'FFFFFF']);
         
-        // Data rows
+        // Data rows with alternating background
         foreach ($students as $index => $student) {
+            $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
             $table->addRow();
-            $table->addCell(1500)->addText($index + 1);
-            $table->addCell(3000)->addText($student->student_id ?? 'N/A');
-            $table->addCell(4000)->addText($student->full_name);
-            $table->addCell(3000)->addText($student->section);
+            $table->addCell(1500, ['bgColor' => $bgColor])->addText((string)($index + 1));
+            $table->addCell(3000, ['bgColor' => $bgColor])->addText((string)($student->student_id ?? 'N/A'));
+            $table->addCell(4000, ['bgColor' => $bgColor])->addText((string)($student->full_name ?? 'N/A'));
+            $table->addCell(3000, ['bgColor' => $bgColor])->addText((string)($student->section ?? 'N/A'));
         }
+        
+        // Footer
+        $section->addTextBreak(2);
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        $section->addText(
+            'Generated by Grade Evaluation System',
+            ['size' => 8, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
         
         // Save to temporary file
         $fileName = 'student_list_' . now()->format('Y-m-d_His') . '.docx';
@@ -569,84 +620,168 @@ class ExportController extends Controller
         return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 
-    private function generateStudentReportWord($student, $overallScore, $riskStatus, $riskBehaviors, $quizAvg, $examAvg, $activityAvg, $projectAvg, $recitationAvg, $attendancePercentage)
+    private function generateStudentReportWord($student, $teacher, $overallScore, $riskStatus, $riskBehaviors, $quizAvg, $examAvg, $activityAvg, $projectAvg, $recitationAvg, $attendancePercentage, $semester, $year, $riskAssessment = null)
     {
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
+        // Letterhead
+        $section->addText(
+            'GRADE EVALUATION SYSTEM',
+            ['bold' => true, 'size' => 18, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addText(
+            'Academic Records and Assessment Department',
+            ['size' => 9, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        
+        // Add line
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        
         // Title
         $section->addText(
             'STUDENT ACADEMIC REPORT',
-            ['bold' => true, 'size' => 16],
+            ['bold' => true, 'size' => 16, 'color' => '1a237e'],
             ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
         );
-        $section->addTextBreak(2);
-        
-        // Student Information
-        $section->addText('STUDENT INFORMATION', ['bold' => true, 'size' => 14, 'underline' => 'single']);
+        $section->addText(
+            ($semester == 1 ? 'First' : 'Second') . ' Semester, Academic Year ' . $year,
+            ['size' => 10, 'color' => '555555'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
         $section->addTextBreak(1);
         
-        $infoTable = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
+        // Student Information Box
+        $infoTable = $section->addTable([
+            'borderSize' => 6, 
+            'borderColor' => 'd1d5db',
+            'cellMargin' => 80
+        ]);
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Student ID', ['bold' => true]);
-        $infoTable->addCell(6000)->addText($student->student_id ?? 'N/A');
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Student Name:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)($student->full_name ?? 'N/A'));
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Name', ['bold' => true]);
-        $infoTable->addCell(6000)->addText($student->full_name);
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Student ID:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)($student->student_id ?? 'N/A'));
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Section', ['bold' => true]);
-        $infoTable->addCell(6000)->addText($student->section);
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Section/Course:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)($student->section ?? 'N/A'));
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Subject', ['bold' => true]);
-        $infoTable->addCell(6000)->addText($student->subject ?? 'N/A');
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Subject:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)($student->subject ?? 'N/A'));
+        $infoTable->addRow();
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Teacher:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)($teacher->full_name ?? 'N/A'));
+        $infoTable->addRow();
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Report Date:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText(now()->format('F d, Y'));
         
-        $section->addTextBreak(2);
-        
-        // Academic Performance
-        $section->addText('ACADEMIC PERFORMANCE', ['bold' => true, 'size' => 14, 'underline' => 'single']);
         $section->addTextBreak(1);
         
-        $perfTable = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
-        $perfTable->addRow();
-        $perfTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Quiz Average', ['bold' => true]);
-        $perfTable->addCell(6000)->addText(number_format($quizAvg, 2) . '%');
-        $perfTable->addRow();
-        $perfTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Exam Average', ['bold' => true]);
-        $perfTable->addCell(6000)->addText(number_format($examAvg, 2) . '%');
-        $perfTable->addRow();
-        $perfTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Activity Average', ['bold' => true]);
-        $perfTable->addCell(6000)->addText(number_format($activityAvg, 2) . '%');
-        $perfTable->addRow();
-        $perfTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Project Average', ['bold' => true]);
-        $perfTable->addCell(6000)->addText(number_format($projectAvg, 2) . '%');
-        $perfTable->addRow();
-        $perfTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Recitation Average', ['bold' => true]);
-        $perfTable->addCell(6000)->addText(number_format($recitationAvg, 2) . '%');
-        $perfTable->addRow();
-        $perfTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Overall Performance', ['bold' => true]);
-        $perfTable->addCell(6000)->addText(number_format($overallScore, 2) . '%');
+        // Overall Score Box
+        $scoreTable = $section->addTable(['borderSize' => 6, 'borderColor' => '1a237e']);
+        $scoreTable->addRow();
+        $scoreCell = $scoreTable->addCell(9000, ['bgColor' => '1a237e', 'valign' => 'center']);
+        $scoreCell->addText(
+            'Overall Academic Performance',
+            ['size' => 11, 'color' => 'FFFFFF', 'bold' => false],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $scoreTable->addRow();
+        $scoreCell2 = $scoreTable->addCell(9000, ['bgColor' => '1a237e']);
+        $scoreCell2->addText(
+            number_format($overallScore, 2) . '%',
+            ['size' => 24, 'color' => 'FFFFFF', 'bold' => true],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
         
-        $section->addTextBreak(2);
-        
-        // Behavioral Assessment
-        $section->addText('BEHAVIORAL ASSESSMENT', ['bold' => true, 'size' => 14, 'underline' => 'single']);
         $section->addTextBreak(1);
         
-        $behavTable = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
-        $behavTable->addRow();
-        $behavTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Attendance Rate', ['bold' => true]);
-        $behavTable->addCell(6000)->addText(number_format($attendancePercentage, 2) . '%');
-        $behavTable->addRow();
-        $behavTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Risk Status', ['bold' => true]);
-        $textRun = $behavTable->addCell(6000)->addTextRun();
-        $color = $riskStatus === 'High Risk' ? 'FF0000' : ($riskStatus === 'At Risk' ? 'FFA500' : '00AA00');
-        $textRun->addText($riskStatus, ['bold' => true, 'color' => $color]);
-        
-        if ($riskBehaviors) {
-            $behavTable->addRow();
-            $behavTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Risk Behaviors', ['bold' => true]);
-            $behavTable->addCell(6000)->addText($riskBehaviors);
+        // Risk Assessment Section (if applicable)
+        if ($riskAssessment) {
+            $riskColor = 'f8d7da';
+            $riskBorderColor = 'dc3545';
+            if ($riskAssessment->risk_status == 'Mid High Risk') {
+                $riskColor = 'fff3cd';
+                $riskBorderColor = 'fd7e14';
+            } elseif ($riskAssessment->risk_status == 'Mid Risk') {
+                $riskColor = 'fff3cd';
+                $riskBorderColor = 'ffc107';
+            } elseif ($riskAssessment->risk_status == 'Low' || $riskAssessment->risk_status == 'No Risk') {
+                $riskColor = 'd4edda';
+                $riskBorderColor = '28a745';
+            }
+            
+            $riskTable = $section->addTable(['borderSize' => 6, 'borderColor' => $riskBorderColor]);
+            $riskTable->addRow();
+            $riskCell = $riskTable->addCell(9000, ['bgColor' => $riskColor]);
+            $riskCell->addText('🔔 Dropout Risk Assessment', ['bold' => true, 'size' => 12]);
+            $riskTable->addRow();
+            $riskCell2 = $riskTable->addCell(9000, ['bgColor' => $riskColor]);
+            $riskCell2->addText('Risk Status: ' . ($riskAssessment->risk_status ?? 'N/A'), ['bold' => true]);
+            
+            if ($riskBehaviors && (is_array($riskBehaviors) ? count($riskBehaviors) > 0 : !empty($riskBehaviors))) {
+                $behaviorsText = is_array($riskBehaviors) ? implode(', ', $riskBehaviors) : (string)$riskBehaviors;
+                $riskTable->addRow();
+                $riskCell3 = $riskTable->addCell(9000, ['bgColor' => $riskColor]);
+                $riskCell3->addText('Observed Behaviors: ' . $behaviorsText, ['size' => 10]);
+            }
+            
+            $section->addTextBreak(1);
         }
+        
+        // Grade Breakdown Section
+        $section->addText(
+            'GRADE BREAKDOWN',
+            ['bold' => true, 'size' => 12, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT]
+        );
+        $section->addTextBreak(1);
+        
+        $gradeTable = $section->addTable(['borderSize' => 6, 'borderColor' => 'd1d5db']);
+        
+        // Header
+        $gradeTable->addRow(400);
+        $gradeTable->addCell(4500, ['bgColor' => '1a237e'])->addText('Component', ['bold' => true, 'color' => 'FFFFFF']);
+        $gradeTable->addCell(4500, ['bgColor' => '1a237e'])->addText('Average Score (%)', ['bold' => true, 'color' => 'FFFFFF']);
+        
+        // Data rows
+        $gradeTable->addRow();
+        $gradeTable->addCell(4500)->addText('Quiz');
+        $gradeTable->addCell(4500)->addText(number_format($quizAvg, 2));
+        
+        $gradeTable->addRow();
+        $gradeTable->addCell(4500, ['bgColor' => 'f9fafb'])->addText('Exam');
+        $gradeTable->addCell(4500, ['bgColor' => 'f9fafb'])->addText(number_format($examAvg, 2));
+        
+        $gradeTable->addRow();
+        $gradeTable->addCell(4500)->addText('Activity');
+        $gradeTable->addCell(4500)->addText(number_format($activityAvg, 2));
+        
+        $gradeTable->addRow();
+        $gradeTable->addCell(4500, ['bgColor' => 'f9fafb'])->addText('Project');
+        $gradeTable->addCell(4500, ['bgColor' => 'f9fafb'])->addText(number_format($projectAvg, 2));
+        
+        $gradeTable->addRow();
+        $gradeTable->addCell(4500)->addText('Recitation');
+        $gradeTable->addCell(4500)->addText(number_format($recitationAvg, 2));
+        
+        $gradeTable->addRow();
+        $gradeTable->addCell(4500, ['bgColor' => 'f9fafb'])->addText('Attendance');
+        $gradeTable->addCell(4500, ['bgColor' => 'f9fafb'])->addText(number_format($attendancePercentage, 2));
+        
+        // Footer
+        $section->addTextBreak(2);
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        $section->addText(
+            'This is an official document generated by the Grade Evaluation System',
+            ['size' => 8, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
         
         // Save
         $fileName = 'student_report_' . ($student->student_id ?? 'unknown') . '_' . now()->format('Y-m-d_His') . '.docx';
@@ -663,17 +798,32 @@ class ExportController extends Controller
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
+        // Letterhead
+        $section->addText(
+            'GRADE EVALUATION SYSTEM',
+            ['bold' => true, 'size' => 18, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addText(
+            'Academic Records and Assessment Department',
+            ['size' => 9, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        
+        // Add line
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        
         // Title
         $section->addText(
             'RISK ASSESSMENT REPORT',
-            ['bold' => true, 'size' => 16],
+            ['bold' => true, 'size' => 16, 'color' => '1a237e'],
             ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
         );
-        $section->addTextBreak(1);
         
         $section->addText(
             'Generated: ' . now()->format('F d, Y h:i A'),
-            ['size' => 10],
+            ['size' => 10, 'color' => '555555'],
             ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
         );
         $section->addTextBreak(2);
@@ -681,37 +831,47 @@ class ExportController extends Controller
         // Create table
         $table = $section->addTable([
             'borderSize' => 6,
-            'borderColor' => '000000',
-            'width' => 100 * 50,
-            'unit' => \PhpOffice\PhpWord\Style\Table::WIDTH_PERCENT
+            'borderColor' => 'd1d5db',
+            'width' => 5000
         ]);
         
-        // Header row
+        // Header row with dark blue background
         $table->addRow(500);
-        $table->addCell(1500, ['bgColor' => 'CCCCCC'])->addText('No.', ['bold' => true]);
-        $table->addCell(2500, ['bgColor' => 'CCCCCC'])->addText('Student ID', ['bold' => true]);
-        $table->addCell(3500, ['bgColor' => 'CCCCCC'])->addText('Name', ['bold' => true]);
-        $table->addCell(2000, ['bgColor' => 'CCCCCC'])->addText('Section', ['bold' => true]);
-        $table->addCell(2000, ['bgColor' => 'CCCCCC'])->addText('Risk Status', ['bold' => true]);
-        $table->addCell(4000, ['bgColor' => 'CCCCCC'])->addText('Risk Behaviors', ['bold' => true]);
+        $table->addCell(1500, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Student ID', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(3500, ['bgColor' => '1a237e'])->addText('Name', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2000, ['bgColor' => '1a237e'])->addText('Section', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2000, ['bgColor' => '1a237e'])->addText('Risk Status', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(4000, ['bgColor' => '1a237e'])->addText('Risk Behaviors', ['bold' => true, 'color' => 'FFFFFF']);
         
-        // Data rows
+        // Data rows with alternating background
         foreach ($assessments as $index => $assessment) {
+            $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
             $table->addRow();
-            $table->addCell(1500)->addText($index + 1);
-            $table->addCell(2500)->addText($assessment->student_id ?? 'N/A');
-            $table->addCell(3500)->addText($assessment->full_name);
-            $table->addCell(2000)->addText($assessment->section);
+            $table->addCell(1500, ['bgColor' => $bgColor])->addText((string)($index + 1));
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($assessment->student_id ?? 'N/A'));
+            $table->addCell(3500, ['bgColor' => $bgColor])->addText((string)($assessment->full_name ?? 'N/A'));
+            $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($assessment->section ?? 'N/A'));
             
             // Risk status with color
-            $color = $assessment->risk_status === 'High Risk' ? 'FF0000' : 
-                     ($assessment->risk_status === 'At Risk' ? 'FFA500' : '00AA00');
-            $table->addCell(2000)->addText($assessment->risk_status, ['bold' => true, 'color' => $color]);
+            $color = $assessment->risk_status === 'High Risk' ? 'dc3545' : 
+                     ($assessment->risk_status === 'At Risk' ? 'fd7e14' : '28a745');
+            $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($assessment->risk_status ?? 'No Risk'), ['bold' => true, 'color' => $color]);
             
             // Risk behaviors
             $behaviors = $assessment->risk_behaviors ?? 'None';
-            $table->addCell(4000)->addText($behaviors);
+            $table->addCell(4000, ['bgColor' => $bgColor])->addText((string)$behaviors);
         }
+        
+        // Footer
+        $section->addTextBreak(2);
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        $section->addText(
+            'Generated by Grade Evaluation System',
+            ['size' => 8, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
         
         // Save
         $fileName = 'risk_assessments_' . now()->format('Y-m-d_His') . '.docx';
@@ -728,92 +888,129 @@ class ExportController extends Controller
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
+        // Letterhead
+        $section->addText(
+            'GRADE EVALUATION SYSTEM',
+            ['bold' => true, 'size' => 18, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addText(
+            'Academic Records and Assessment Department',
+            ['size' => 9, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        
+        // Add line
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        
         // Title
         $section->addText(
             'ACTIVITY RESULTS REPORT',
-            ['bold' => true, 'size' => 16],
+            ['bold' => true, 'size' => 16, 'color' => '1a237e'],
             ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
         );
         $section->addTextBreak(2);
         
         // Activity Information
-        $section->addText('ACTIVITY INFORMATION', ['bold' => true, 'size' => 14, 'underline' => 'single']);
+        $section->addText(
+            'ACTIVITY INFORMATION',
+            ['bold' => true, 'size' => 12, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT]
+        );
         $section->addTextBreak(1);
         
-        $infoTable = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
+        $infoTable = $section->addTable(['borderSize' => 6, 'borderColor' => 'd1d5db', 'cellMargin' => 80]);
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Title', ['bold' => true]);
-        $infoTable->addCell(6000)->addText($activity->title);
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Title:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)($activity->title ?? 'N/A'));
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Type', ['bold' => true]);
-        $infoTable->addCell(6000)->addText(ucfirst($activity->type));
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Type:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)ucfirst($activity->type ?? 'N/A'));
         $infoTable->addRow();
-        $infoTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Total Score', ['bold' => true]);
-        $infoTable->addCell(6000)->addText($activity->total_score);
+        $infoTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Total Score:', ['bold' => true, 'color' => '1a237e']);
+        $infoTable->addCell(6500)->addText((string)$activity->total_score);
         
         $section->addTextBreak(2);
         
         // Statistics
-        $section->addText('STATISTICS', ['bold' => true, 'size' => 14, 'underline' => 'single']);
+        $section->addText(
+            'STATISTICS',
+            ['bold' => true, 'size' => 12, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT]
+        );
         $section->addTextBreak(1);
         
-        $statsTable = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
+        $statsTable = $section->addTable(['borderSize' => 6, 'borderColor' => 'd1d5db', 'cellMargin' => 80]);
         $statsTable->addRow();
-        $statsTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Total Students', ['bold' => true]);
-        $statsTable->addCell(6000)->addText($stats['total_students']);
+        $statsTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Total Students:', ['bold' => true, 'color' => '1a237e']);
+        $statsTable->addCell(6500)->addText((string)$stats['total_students']);
         $statsTable->addRow();
-        $statsTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Average Score', ['bold' => true]);
-        $statsTable->addCell(6000)->addText(number_format($stats['average_score'], 2));
+        $statsTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Average Score:', ['bold' => true, 'color' => '1a237e']);
+        $statsTable->addCell(6500)->addText(number_format($stats['average_score'], 2));
         $statsTable->addRow();
-        $statsTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Highest Score', ['bold' => true]);
-        $statsTable->addCell(6000)->addText($stats['highest_score']);
+        $statsTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Highest Score:', ['bold' => true, 'color' => '1a237e']);
+        $statsTable->addCell(6500)->addText((string)$stats['highest_score']);
         $statsTable->addRow();
-        $statsTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Lowest Score', ['bold' => true]);
-        $statsTable->addCell(6000)->addText($stats['lowest_score']);
+        $statsTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Lowest Score:', ['bold' => true, 'color' => '1a237e']);
+        $statsTable->addCell(6500)->addText((string)$stats['lowest_score']);
         $statsTable->addRow();
-        $statsTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Passed', ['bold' => true]);
-        $statsTable->addCell(6000)->addText($stats['passed']);
+        $statsTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Passed:', ['bold' => true, 'color' => '1a237e']);
+        $statsTable->addCell(6500)->addText((string)$stats['passed']);
         $statsTable->addRow();
-        $statsTable->addCell(3000, ['bgColor' => 'E7E6E6'])->addText('Failed', ['bold' => true]);
-        $statsTable->addCell(6000)->addText($stats['failed']);
+        $statsTable->addCell(2500, ['bgColor' => 'f9fafb'])->addText('Failed:', ['bold' => true, 'color' => '1a237e']);
+        $statsTable->addCell(6500)->addText((string)$stats['failed']);
         
         $section->addTextBreak(2);
         
         // Results Table
-        $section->addText('STUDENT RESULTS', ['bold' => true, 'size' => 14, 'underline' => 'single']);
+        $section->addText(
+            'STUDENT RESULTS',
+            ['bold' => true, 'size' => 12, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT]
+        );
         $section->addTextBreak(1);
         
         $resultsTable = $section->addTable([
             'borderSize' => 6,
-            'borderColor' => '000000',
-            'width' => 100 * 50,
-            'unit' => \PhpOffice\PhpWord\Style\Table::WIDTH_PERCENT
+            'borderColor' => 'd1d5db'
         ]);
         
         // Header row
         $resultsTable->addRow(500);
-        $resultsTable->addCell(1500, ['bgColor' => 'CCCCCC'])->addText('No.', ['bold' => true]);
-        $resultsTable->addCell(2500, ['bgColor' => 'CCCCCC'])->addText('Student ID', ['bold' => true]);
-        $resultsTable->addCell(3500, ['bgColor' => 'CCCCCC'])->addText('Name', ['bold' => true]);
-        $resultsTable->addCell(2000, ['bgColor' => 'CCCCCC'])->addText('Score', ['bold' => true]);
-        $resultsTable->addCell(2000, ['bgColor' => 'CCCCCC'])->addText('Total', ['bold' => true]);
-        $resultsTable->addCell(2000, ['bgColor' => 'CCCCCC'])->addText('Status', ['bold' => true]);
+        $resultsTable->addCell(1500, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
+        $resultsTable->addCell(2500, ['bgColor' => '1a237e'])->addText('Student ID', ['bold' => true, 'color' => 'FFFFFF']);
+        $resultsTable->addCell(3500, ['bgColor' => '1a237e'])->addText('Name', ['bold' => true, 'color' => 'FFFFFF']);
+        $resultsTable->addCell(2000, ['bgColor' => '1a237e'])->addText('Score', ['bold' => true, 'color' => 'FFFFFF']);
+        $resultsTable->addCell(2000, ['bgColor' => '1a237e'])->addText('Total', ['bold' => true, 'color' => 'FFFFFF']);
+        $resultsTable->addCell(2000, ['bgColor' => '1a237e'])->addText('Status', ['bold' => true, 'color' => 'FFFFFF']);
         
-        // Data rows
+        // Data rows with alternating background
         foreach ($results as $index => $result) {
             $totalScore = $result->total_score ?? 100;
             $passingScore = $totalScore * 0.75;
             $status = $result->score >= $passingScore ? 'Passed' : 'Failed';
-            $statusColor = $status === 'Passed' ? '00AA00' : 'FF0000';
+            $statusColor = $status === 'Passed' ? '28a745' : 'dc3545';
+            $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
             
             $resultsTable->addRow();
-            $resultsTable->addCell(1500)->addText($index + 1);
-            $resultsTable->addCell(2500)->addText($result->student_id ?? 'N/A');
-            $resultsTable->addCell(3500)->addText($result->full_name);
-            $resultsTable->addCell(2000)->addText($result->score);
-            $resultsTable->addCell(2000)->addText($result->total_score);
-            $resultsTable->addCell(2000)->addText($status, ['bold' => true, 'color' => $statusColor]);
+            $resultsTable->addCell(1500, ['bgColor' => $bgColor])->addText((string)($index + 1));
+            $resultsTable->addCell(2500, ['bgColor' => $bgColor])->addText((string)($result->student_id ?? 'N/A'));
+            $resultsTable->addCell(3500, ['bgColor' => $bgColor])->addText((string)($result->full_name ?? 'N/A'));
+            $resultsTable->addCell(2000, ['bgColor' => $bgColor])->addText((string)$result->score);
+            $resultsTable->addCell(2000, ['bgColor' => $bgColor])->addText((string)$result->total_score);
+            $resultsTable->addCell(2000, ['bgColor' => $bgColor])->addText((string)$status, ['bold' => true, 'color' => $statusColor]);
         }
+        
+        // Footer
+        $section->addTextBreak(2);
+        $section->addLine(['weight' => 2, 'width' => 450, 'height' => 0, 'color' => '1a237e']);
+        $section->addTextBreak(1);
+        $section->addText(
+            'Generated by Grade Evaluation System',
+            ['size' => 8, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
         
         // Save
         $fileName = 'activity_results_' . str_replace(' ', '_', $activity->title) . '_' . now()->format('Y-m-d_His') . '.docx';
