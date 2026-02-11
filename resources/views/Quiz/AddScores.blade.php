@@ -13,6 +13,7 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('export.activity-results', ['type' => 'Quiz', 'title' => $quizName, 'date' => $dateTaken, 'format' => 'pdf']) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
                         <li><a class="dropdown-item" href="{{ route('export.activity-results', ['type' => 'Quiz', 'title' => $quizName, 'date' => $dateTaken, 'format' => 'excel']) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                        <li><a class="dropdown-item" href="{{ route('export.activity-results', ['type' => 'Quiz', 'title' => $quizName, 'date' => $dateTaken, 'format' => 'word']) }}"><i class="fas fa-file-word"></i> Export as Word</a></li>
                     </ul>
                 </div>
                 <a href="{{ route('quiz.create-quiz-page') }}" class="btn btn-outline-secondary">Back to Quiz List</a>

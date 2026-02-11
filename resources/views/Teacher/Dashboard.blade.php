@@ -356,6 +356,7 @@
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="{{ route('export.student-list', ['format' => 'pdf']) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
                                     <li><a class="dropdown-item" href="{{ route('export.student-list', ['format' => 'excel']) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('export.student-list', ['format' => 'word']) }}"><i class="fas fa-file-word"></i> Export as Word</a></li>
                                 </ul>
                             </div>
                             @if(isset($studentsWithRisk) && $studentsWithRisk->count() > 0)
@@ -572,6 +573,7 @@
                             <select class="form-select" id="formatSelect" name="format" required>
                                 <option value="pdf">PDF Document</option>
                                 <option value="excel">Excel Spreadsheet</option>
+                                <option value="word">Word Document</option>
                             </select>
                         </div>
                     </div>

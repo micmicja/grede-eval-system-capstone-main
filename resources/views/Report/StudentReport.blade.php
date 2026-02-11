@@ -20,6 +20,7 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('export.student-report', ['student' => $student->id, 'format' => 'pdf']) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
                         <li><a class="dropdown-item" href="{{ route('export.student-report', ['student' => $student->id, 'format' => 'excel']) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                        <li><a class="dropdown-item" href="{{ route('export.student-report', ['student' => $student->id, 'format' => 'word']) }}"><i class="fas fa-file-word"></i> Export as Word</a></li>
                     </ul>
                 </div>
                 <a href="{{ route('Dashboard.teacher') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
