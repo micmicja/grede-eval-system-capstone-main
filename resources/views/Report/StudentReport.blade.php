@@ -12,6 +12,16 @@
                 </p>
             </div>
             <div class="col-md-4 text-end">
+                <div class="btn-group me-2" role="group">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">download</span>
+                        Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ route('export.student-report', ['student' => $student->id, 'format' => 'pdf']) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
+                        <li><a class="dropdown-item" href="{{ route('export.student-report', ['student' => $student->id, 'format' => 'excel']) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                    </ul>
+                </div>
                 <a href="{{ route('Dashboard.teacher') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
             </div>
         </div>

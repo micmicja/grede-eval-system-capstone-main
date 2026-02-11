@@ -58,6 +58,12 @@ Route::middleware(['role:teacher', 'no-cache'])->prefix('Teacher')->group(functi
     // Student Report route
     Route::get('/student/{student}/report', [StudentReportController::class, 'show'])->name('student.report');
 
+    // Export routes
+    Route::get('/export/student-list', [\App\Http\Controllers\ExportController::class, 'exportStudentList'])->name('export.student-list');
+    Route::get('/export/student-report/{student}', [\App\Http\Controllers\ExportController::class, 'exportStudentReport'])->name('export.student-report');
+    Route::get('/export/risk-assessments', [\App\Http\Controllers\ExportController::class, 'exportRiskAssessments'])->name('export.risk-assessments');
+    Route::get('/export/activity-results', [\App\Http\Controllers\ExportController::class, 'exportActivityResults'])->name('export.activity-results');
+
     Route::get('/flag-student/{id}', [StudentReportController::class, 'ShowFlagFormPage'])->name('flag.view');
     Route::post('/submit-flag', [StudentReportController::class, 'storeFlag'])->name('flag.submit');
 

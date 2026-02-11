@@ -6,6 +6,15 @@
                 <p class="text-muted">Step 2: Add scores for all students</p>
             </div>
             <div class="col-md-4 text-end">
+                <div class="btn-group me-2" role="group">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ route('export.activity-results', ['type' => 'Recitation', 'title' => $recitationName, 'date' => $dateTaken, 'format' => 'pdf']) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
+                        <li><a class="dropdown-item" href="{{ route('export.activity-results', ['type' => 'Recitation', 'title' => $recitationName, 'date' => $dateTaken, 'format' => 'excel']) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                    </ul>
+                </div>
                 <a href="{{ route('recitation.create-recitation-page') }}" class="btn btn-outline-secondary">Back to Recitation List</a>
             </div>
         </div>

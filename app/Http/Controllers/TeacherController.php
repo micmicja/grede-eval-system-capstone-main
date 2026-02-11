@@ -73,7 +73,13 @@ class TeacherController extends Controller
                                        ($attendanceAvg * $attendanceWeight / 100);
         }
 
-        return view('Teacher.Dashboard', compact('students', 'percentage'));
+        // Get students who have risk assessments for export dropdown
+        $studentsWithRisk = Student::where('teacher_id', Auth::id())
+            ->whereHas('observations')
+            ->orderBy('full_name', 'asc')
+            ->get();
+
+        return view('Teacher.Dashboard', compact('students', 'percentage', 'studentsWithRisk'));
     }
 
 

@@ -343,17 +343,33 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-semibold">Student List</h5>
-                        @if ($percentage === null)
-                        <span class="text-danger small">Please set grade allocation in settings.</span>
+                        <div>
+                            @if ($percentage === null)
+                            <span class="text-danger small">Please set grade allocation in settings.</span>
 
-                        @else
-                        <a href="{{ route('add-student') }}" class="btn btn-sm btn-outline-primary">
-                            <span class="material-symbols-rounded" style="font-size: 18px;">person_add</span>
-                            Add Student
-                        </a>
-                        @endif
-
-
+                            @else
+                            <div class="btn-group me-2" role="group">
+                                <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
+                                    Export Student List
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('export.student-list', ['format' => 'pdf']) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('export.student-list', ['format' => 'excel']) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                                </ul>
+                            </div>
+                            @if(isset($studentsWithRisk) && $studentsWithRisk->count() > 0)
+                            <button type="button" class="btn btn-sm btn-warning me-2" data-bs-toggle="modal" data-bs-target="#riskAssessmentExportModal">
+                                <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
+                                Export Risk Assessment
+                            </button>
+                            @endif
+                            <a href="{{ route('add-student') }}" class="btn btn-sm btn-outline-primary">
+                                <span class="material-symbols-rounded" style="font-size: 18px;">person_add</span>
+                                Add Student
+                            </a>
+                            @endif
+                        </div>
                     </div>
 
                     {{-- success message --}}
@@ -528,5 +544,47 @@
         </div>
     </div>
 
+    {{-- Risk Assessment Export Modal --}}
+    <div class="modal fade" id="riskAssessmentExportModal" tabindex="-1" aria-labelledby="riskAssessmentExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="riskAssessmentExportModalLabel">
+                        <span class="material-symbols-rounded">download</span>
+                        Export Risk Assessment
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('export.risk-assessments') }}" method="GET">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="studentSelect" class="form-label fw-bold">Select Student</label>
+                            <select class="form-select" id="studentSelect" name="student_id">
+                                <option value="">All Students with Risk Assessments</option>
+                                @foreach($studentsWithRisk as $student)
+                                    <option value="{{ $student->id }}">{{ $student->full_name }} - {{ $student->section }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Choose a specific student or export all students' risk assessments.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="formatSelect" class="form-label fw-bold">Export Format</label>
+                            <select class="form-select" id="formatSelect" name="format" required>
+                                <option value="pdf">PDF Document</option>
+                                <option value="excel">Excel Spreadsheet</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
+                            Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 </x-layouts.app>
