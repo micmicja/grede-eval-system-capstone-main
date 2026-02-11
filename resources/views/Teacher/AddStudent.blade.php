@@ -65,9 +65,15 @@
                 <div class="row g-3">
 
                     <div class="col-md-6">
+                        <label class="form-label">Student ID</label>
+                        <input type="text" class="form-control" name="student_id" required>
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label">Full Name</label>
                         <input type="text" class="form-control" name="full_name" required>
                     </div>
+                    
                     <div class="col-md-6">
                         <label class="form-label">Section/Course</label>
                         <input type="text" class="form-control" name="section" required>

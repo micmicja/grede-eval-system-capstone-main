@@ -40,9 +40,16 @@
                                     color: white !important;
                                 }
                             </style>
-                            <small class="text-muted d-block mt-2">
-                                Auto-calculated from Quiz (25%), Exam (25%), Activity (25%), Project (15%), Recitation (5%), and Attendance (10%). Each observed behavior reduces the score by 5%.
-                            </small>
+                            
+                            
+                            {{-- Grade Calculation Display --}}
+                            <div class="alert alert-info mt-3" id="gradeCalculation{{ $student->id }}" style="display: none;">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">Student Average:</span>
+                                    <span class="fw-bold fs-5 text-primary" id="baseGrade{{ $student->id }}">0</span>
+                                </div>
+                            </div>
+                            
                             <input type="hidden" name="general_average" id="generalAverageValue{{ $student->id }}">
                         </div>
 
@@ -63,15 +70,19 @@
                                     
                                     console.log('Base Score:', baseScore{{ $student->id }}, 'Behaviors:', checkedCount, 'Penalty:', behaviorPenalty, 'Adjusted:', adjustedScore);
                                     
+                                    // Update display elements
+                                    document.getElementById('baseGrade{{ $student->id }}').textContent = baseScore{{ $student->id }}.toFixed(2);
+                                    document.getElementById('gradeCalculation{{ $student->id }}').style.display = 'block';
+                                    
                                     // Store the adjusted score
                                     document.getElementById('generalAverageValue{{ $student->id }}').value = adjustedScore.toFixed(2);
                                     
                                     // Auto-select risk level based on adjusted score
-                                    // Higher score = Lower risk
-                                    if (adjustedScore >= 85) {
+                                    // New ranges: Low (90-100), Mid (76-89), Mid High (60-75), High (59 below)
+                                    if (adjustedScore >= 90) {
                                         document.getElementById('riskLow{{ $student->id }}').checked = true;
                                         console.log('Selected: Low Risk');
-                                    } else if (adjustedScore >= 75) {
+                                    } else if (adjustedScore >= 76) {
                                         document.getElementById('riskMid{{ $student->id }}').checked = true;
                                         console.log('Selected: Mid Risk');
                                     } else if (adjustedScore >= 60) {

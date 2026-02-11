@@ -26,6 +26,10 @@ class TeacherController extends Controller
                     ->where('status', '!=', 'resolved')
                     ->orderBy('scheduled_at', 'asc');
             }])
+            ->with(['observations' => function ($query) {
+                // Check if student has been referred to councilor
+                $query->where('referred_to_councilor', true);
+            }])
             ->get();
 
         $percentage = TeacherSetting::where('user_id', Auth::id())->first();
@@ -203,6 +207,7 @@ class TeacherController extends Controller
     {
         // validate the request
         $validatedData = $request->validate([
+            'student_id' => 'required|string|max:255|unique:students,student_id',
             'full_name' => 'required|string|max:255',
             'section' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
@@ -212,6 +217,7 @@ class TeacherController extends Controller
         $teacherId = Auth::user()->id;
         // create new student
         Student::create([
+            'student_id' => $validatedData['student_id'],
             'full_name' => $validatedData['full_name'],
             'section' => $validatedData['section'],
             'subject' => $validatedData['subject'],

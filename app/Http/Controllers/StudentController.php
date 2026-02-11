@@ -26,6 +26,16 @@ class StudentController extends Controller
         $studentId = $request->student_id;
         $teacherId = Auth::id();
 
+        // Check if student already has an observation referred to councilor
+        $existingObservation = DB::table('student_observations')
+            ->where('student_id', $studentId)
+            ->where('referred_to_councilor', true)
+            ->first();
+
+        if ($existingObservation) {
+            return redirect()->back()->with('error', 'This student has already been referred to the counselor. Cannot create duplicate observation.');
+        }
+
         // Step A: Auto-Calculate Average with weighted grades
         $average = $this->calculateWeightedAverage($studentId);
 
@@ -177,16 +187,21 @@ class StudentController extends Controller
 
     /**
      * Determine risk level based on calculated average
+     * New ranges:
+     * - High: 59 and below
+     * - Mid High: 60 to 75
+     * - Mid: 76 to 89
+     * - Low: 90 to 100
      */
     private function determineRiskLevel($average)
     {
-        if ($average < 75) {
+        if ($average < 60) {
             return 'High Risk';
-        } elseif ($average >= 75 && $average <= 79) {
+        } elseif ($average >= 60 && $average <= 75) {
             return 'Mid High Risk';
-        } elseif ($average >= 80 && $average <= 84) {
+        } elseif ($average >= 76 && $average <= 89) {
             return 'Mid Risk';
-        } else { // 85 - 100
+        } else { // 90 - 100
             return 'Low Risk';
         }
     }

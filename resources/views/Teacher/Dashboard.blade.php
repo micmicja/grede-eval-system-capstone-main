@@ -413,21 +413,24 @@
                                             </a>
                                             
                                             {{-- Observation Button --}}
-                                            <button type="button" class="btn btn-sm btn-success text-white me-1" 
-                                                data-bs-toggle="modal" data-bs-target="#observationModal{{ $student->id }}">
-                                                <span class="material-symbols-rounded"
-                                                    style="font-size: 16px;">psychology</span> Observation
-                                            </button>
-                                            
-                                            <form action="{{ route('student.destroy', $student->id) }}" method="POST"
-                                                class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                    onclick="return confirm('Are you sure you want to delete this student?');">
-                                                    Delete
+                                            @if($student->observations->count() > 0)
+                                                <button type="button" class="btn btn-sm btn-secondary text-white me-1" disabled
+                                                    title="Student already referred to counselor">
+                                                    <span class="material-symbols-rounded"
+                                                        style="font-size: 16px;">psychology</span> Already Referred
                                                 </button>
-                                            </form>
+                                            @else
+                                                <button type="button" class="btn btn-sm btn-success text-white me-1" 
+                                                    data-bs-toggle="modal" data-bs-target="#observationModal{{ $student->id }}">
+                                                    <span class="material-symbols-rounded"
+                                                        style="font-size: 16px;">psychology</span> Observation
+                                                </button>
+                                            @endif
+                                            
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ $student->id }}">
+                                                Delete
+                                            </button>
                                         </td>
                                     </tr>
                                     @empty
@@ -445,7 +448,81 @@
 
             {{-- Observation Modals for each student --}}
             @foreach($students as $student)
-                @include('components.observation-modal', ['student' => $student])
+                @if($student->observations->count() == 0)
+                    @include('components.observation-modal', ['student' => $student])
+                @endif
+            @endforeach
+
+            {{-- Delete Confirmation Modals for each student --}}
+            @foreach($students as $student)
+                <div class="modal fade" id="deleteModal{{ $student->id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $student->id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="deleteModalLabel{{ $student->id }}">
+                                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-3">Are you sure you want to delete <strong>{{ $student->full_name }}</strong>?</p>
+                                <p class="text-muted mb-3">This action cannot be undone. All grades and records for this student will be permanently deleted.</p>
+                                
+                                <div class="alert alert-warning">
+                                    <strong>To confirm deletion, please type:</strong> <code>Confirm</code>
+                                </div>
+                                
+                                <input type="text" class="form-control" id="deleteConfirmInput{{ $student->id }}" 
+                                    placeholder="Type 'Confirm' to delete" autocomplete="off">
+                                <small class="text-danger d-none" id="deleteError{{ $student->id }}">
+                                    Please type "Confirm" exactly to proceed.
+                                </small>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form action="{{ route('student.destroy', $student->id) }}" method="POST" id="deleteForm{{ $student->id }}" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="btn btn-danger" onclick="confirmDelete{{ $student->id }}()">
+                                        Delete Student
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    function confirmDelete{{ $student->id }}() {
+                        const input = document.getElementById('deleteConfirmInput{{ $student->id }}');
+                        const error = document.getElementById('deleteError{{ $student->id }}');
+                        const deleteForm = document.getElementById('deleteForm{{ $student->id }}');
+                        
+                        if (input.value === 'Confirm') {
+                            deleteForm.submit();
+                        } else {
+                            error.classList.remove('d-none');
+                            input.classList.add('is-invalid');
+                            input.focus();
+                        }
+                    }
+                    
+                    // Clear error when user types
+                    document.getElementById('deleteConfirmInput{{ $student->id }}').addEventListener('input', function() {
+                        const error = document.getElementById('deleteError{{ $student->id }}');
+                        error.classList.add('d-none');
+                        this.classList.remove('is-invalid');
+                    });
+                    
+                    // Clear input when modal is closed
+                    document.getElementById('deleteModal{{ $student->id }}').addEventListener('hidden.bs.modal', function() {
+                        const input = document.getElementById('deleteConfirmInput{{ $student->id }}');
+                        const error = document.getElementById('deleteError{{ $student->id }}');
+                        input.value = '';
+                        error.classList.add('d-none');
+                        input.classList.remove('is-invalid');
+                    });
+                </script>
             @endforeach
 
         </div>

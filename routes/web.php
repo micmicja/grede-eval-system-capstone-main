@@ -27,7 +27,7 @@ Route::post('/login', [AuthController::class, 'processLogin'])->name('login.proc
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // route for admin dashboard
-Route::middleware(['role:admin'])->prefix('Admin')->group(function () {
+Route::middleware(['role:admin', 'no-cache'])->prefix('Admin')->group(function () {
     Route::get('/Dashboard', [AdminController::class, 'index'])->name('Dashboard.admin');
     Route::get('/create-teacher', [AuthController::class, 'createTeacherForm'])->name('create-teacher');
     Route::post('/create-teacher', [TeacherController::class, 'store'])->name('create-teacher.store');
@@ -46,7 +46,7 @@ Route::middleware(['role:admin'])->prefix('Admin')->group(function () {
 
 
 // route for teacher dashboard
-Route::middleware(['role:teacher'])->prefix('Teacher')->group(function () {
+Route::middleware(['role:teacher', 'no-cache'])->prefix('Teacher')->group(function () {
     Route::get('/Dashboard', [TeacherController::class, 'index'])->name('Dashboard.teacher');
 
     // Delete Student route
@@ -150,7 +150,7 @@ Route::middleware(['role:teacher'])->prefix('Teacher')->group(function () {
 
 
 
-Route::middleware(['role:councilor'])->prefix('councilor')->group(function () {
+Route::middleware(['role:councilor', 'no-cache'])->prefix('councilor')->group(function () {
 
     Route::get('/Dashboard', [EvalutionCommentController::class, 'index'])->name('councilorDashboard.view');
     Route::get('/search', [EvalutionCommentController::class, 'search'])->name('councilor.search');

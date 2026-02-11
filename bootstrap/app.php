@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\PreventBackAfterLogin;
+use App\Http\Middleware\NoCacheMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         //  register global middleware here
         $middleware->alias([
             'role' => AuthMiddleware::class,
-            'prevent-back-after-login' => PreventBackAfterLogin::class
+            'prevent-back-after-login' => PreventBackAfterLogin::class,
+            'no-cache' => NoCacheMiddleware::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
