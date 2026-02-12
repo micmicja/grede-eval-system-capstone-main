@@ -124,26 +124,39 @@
                     <div class="card-header bg-white border-0 py-3">
                         <div class="d-flex justify-content-between align-items-center mb-0">
                             <h5 class="fw-bold mb-0">Student Counseling Referrals</h5>
-                            <form method="GET" action="{{ route('councilorDashboard.view') }}" class="d-flex gap-2">
-                                <input type="text" name="q" value="{{ request('q') }}" class="form-control form-control-sm rounded-pill px-3"
-                                    placeholder="Search student or reason..." style="width: 220px;">
+                            <div class="d-flex gap-2">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
+                                        Export Referrals
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('councilor.export', array_merge(request()->all(), ['format' => 'pdf'])) }}"><i class="fas fa-file-pdf"></i> Export as PDF</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('councilor.export', array_merge(request()->all(), ['format' => 'excel'])) }}"><i class="fas fa-file-excel"></i> Export as Excel</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('councilor.export', array_merge(request()->all(), ['format' => 'word'])) }}"><i class="fas fa-file-word"></i> Export as Word</a></li>
+                                    </ul>
+                                </div>
+                                <form method="GET" action="{{ route('councilorDashboard.view') }}" class="d-flex gap-2">
+                                    <input type="text" name="q" value="{{ request('q') }}" class="form-control form-control-sm rounded-pill px-3"
+                                        placeholder="Search student or reason..." style="width: 220px;">
 
-                                <select name="teacher_id" class="form-select form-select-sm rounded-pill" style="width: 180px;">
-                                    <option value="">All Teachers</option>
-                                    @foreach($instructors as $ins)
-                                        <option value="{{ $ins->id }}" {{ request('teacher_id') == $ins->id ? 'selected' : '' }}>{{ $ins->full_name }} ({{ $ins->flag_created_count }})</option>
-                                    @endforeach
-                                </select>
+                                    <select name="teacher_id" class="form-select form-select-sm rounded-pill" style="width: 180px;">
+                                        <option value="">All Teachers</option>
+                                        @foreach($instructors as $ins)
+                                            <option value="{{ $ins->id }}" {{ request('teacher_id') == $ins->id ? 'selected' : '' }}>{{ $ins->full_name }} ({{ $ins->flag_created_count }})</option>
+                                        @endforeach
+                                    </select>
 
-                                <select name="status" class="form-select form-select-sm rounded-pill" style="width: 150px;">
-                                    <option value="">Any Status</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="ongoing" {{ request('status') == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                                    <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-                                </select>
+                                    <select name="status" class="form-select form-select-sm rounded-pill" style="width: 150px;">
+                                        <option value="">Any Status</option>
+                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="ongoing" {{ request('status') == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
+                                        <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                    </select>
 
-                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Apply</button>
-                            </form>
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Apply</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body px-0">
@@ -198,11 +211,15 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="small fw-semibold {{ $observation->scheduled_at ? 'text-primary' : 'text-muted' }} d-flex align-items-center">
-                                                <span class="material-symbols-rounded me-1"
-                                                    style="font-size: 16px;">calendar_month</span>
-                                                {{ $observation->scheduled_at ? $observation->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled' }}
-                                            </div>
+                                            @if($observation->counseling_status === 'resolved')
+                                                <span class="small text-muted">-</span>
+                                            @else
+                                                <div class="small fw-semibold {{ $observation->scheduled_at ? 'text-primary' : 'text-muted' }} d-flex align-items-center">
+                                                    <span class="material-symbols-rounded me-1"
+                                                        style="font-size: 16px;">calendar_month</span>
+                                                    {{ $observation->scheduled_at ? $observation->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled' }}
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-2">
@@ -354,12 +371,16 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="small fw-semibold text-primary d-flex align-items-center">
-                                                <span class="material-symbols-rounded me-1"
-                                                    style="font-size: 16px;">calendar_month</span>
-                                                {{ $eval->scheduled_at ? $eval->scheduled_at->format('M d, Y h:i A') :
-                                                'Not Set' }}
-                                            </div>
+                                            @if($eval->status === 'resolved')
+                                                <span class="small text-muted">-</span>
+                                            @else
+                                                <div class="small fw-semibold text-primary d-flex align-items-center">
+                                                    <span class="material-symbols-rounded me-1"
+                                                        style="font-size: 16px;">calendar_month</span>
+                                                    {{ $eval->scheduled_at ? $eval->scheduled_at->format('M d, Y h:i A') :
+                                                    'Not Set' }}
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-2">

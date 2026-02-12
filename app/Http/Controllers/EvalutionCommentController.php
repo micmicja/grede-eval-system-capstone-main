@@ -7,6 +7,10 @@ use App\Models\StudentObservation;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
 
 class EvalutionCommentController extends Controller
 {
@@ -273,5 +277,248 @@ class EvalutionCommentController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Counseling status updated successfully!');
+    }
+
+    /**
+     * Export counseling referrals to PDF, Excel, or Word
+     */
+    public function exportReferrals(Request $request)
+    {
+        $counselor = Auth::user();
+        
+        // Build query for evaluations
+        $query = EvalutionComment::with(['student', 'teacher']);
+        
+        if ($request->filled('q')) {
+            $q = $request->query('q');
+            $query->where(function ($qbuilder) use ($q) {
+                $qbuilder->where('comments', 'like', "%{$q}%")
+                    ->orWhereHas('student', function ($s) use ($q) {
+                        $s->where('full_name', 'like', "%{$q}%");
+                    })
+                    ->orWhereHas('teacher', function ($t) use ($q) {
+                        $t->where('full_name', 'like', "%{$q}%");
+                    });
+            });
+        }
+        
+        if ($request->filled('teacher_id')) {
+            $query->where('teacher_id', $request->query('teacher_id'));
+        }
+        
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+        
+        $evaluations = $query->latest()->get();
+        
+        // Build query for risk observations
+        $riskObservationsQuery = StudentObservation::with(['student', 'teacher'])
+            ->where('referred_to_councilor', true);
+        
+        if ($request->filled('q')) {
+            $q = $request->query('q');
+            $riskObservationsQuery->where(function ($qbuilder) use ($q) {
+                $qbuilder->whereHas('student', function ($s) use ($q) {
+                    $s->where('full_name', 'like', "%{$q}%");
+                })
+                ->orWhereHas('teacher', function ($t) use ($q) {
+                    $t->where('full_name', 'like', "%{$q}%");
+                });
+            });
+        }
+        
+        if ($request->filled('teacher_id')) {
+            $riskObservationsQuery->where('teacher_id', $request->query('teacher_id'));
+        }
+        
+        if ($request->filled('status')) {
+            $riskObservationsQuery->where('counseling_status', $request->query('status'));
+        }
+        
+        $riskObservations = $riskObservationsQuery->latest()->get();
+        
+        $format = $request->input('format', 'pdf');
+        $filename = 'counseling-referrals-' . Carbon::now()->format('Y-m-d');
+        
+        if ($format === 'excel') {
+            return $this->generateReferralsCSV($evaluations, $riskObservations, $filename);
+        }
+        
+        if ($format === 'word') {
+            return $this->generateReferralsWord($evaluations, $riskObservations, $counselor, $filename);
+        }
+        
+        // Default to PDF
+        $pdf = Pdf::loadView('exports.counseling-referrals', [
+            'evaluations' => $evaluations,
+            'riskObservations' => $riskObservations,
+            'counselor' => $counselor,
+            'date' => Carbon::now()->format('F d, Y'),
+            'filters' => [
+                'search' => $request->input('q'),
+                'teacher' => $request->input('teacher_id'),
+                'status' => $request->input('status')
+            ]
+        ]);
+        
+        return $pdf->download($filename . '.pdf');
+    }
+
+    /**
+     * Generate CSV for counseling referrals
+     */
+    private function generateReferralsCSV($evaluations, $riskObservations, $filename)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+        ];
+        
+        $callback = function() use ($evaluations, $riskObservations) {
+            $file = fopen('php://output', 'w');
+            
+            fputcsv($file, ['COUNSELING REFERRALS']);
+            fputcsv($file, ['Generated on: ' . Carbon::now()->format('F d, Y')]);
+            fputcsv($file, []);
+            
+            fputcsv($file, ['No.', 'Type', 'Student Name', 'Section', 'Referred By', 'Reason/Risk Level', 'Status', 'Schedule']);
+            
+            $index = 1;
+            
+            // Export risk observations
+            foreach ($riskObservations as $obs) {
+                $behaviors = is_array($obs->observed_behaviors) 
+                    ? $obs->observed_behaviors 
+                    : json_decode($obs->observed_behaviors, true) ?? [];
+                $behaviorText = count($behaviors) > 0 ? implode('; ', $behaviors) : 'Risk Assessment';
+                
+                fputcsv($file, [
+                    $index++,
+                    'Risk Assessment',
+                    $obs->student->full_name ?? 'N/A',
+                    $obs->student->section ?? 'N/A',
+                    $obs->teacher->full_name ?? 'N/A',
+                    $obs->risk_status . ' - ' . $behaviorText,
+                    ucfirst($obs->counseling_status ?? 'pending'),
+                    $obs->scheduled_at ? $obs->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled'
+                ]);
+            }
+            
+            // Export regular evaluations
+            foreach ($evaluations as $eval) {
+                fputcsv($file, [
+                    $index++,
+                    'Referral',
+                    $eval->student->full_name ?? 'N/A',
+                    $eval->student->section ?? 'N/A',
+                    $eval->teacher->full_name ?? 'N/A',
+                    $eval->comments ?? 'N/A',
+                    ucfirst($eval->status ?? 'pending'),
+                    $eval->scheduled_at ? $eval->scheduled_at->format('M d, Y h:i A') : 'Not Set'
+                ]);
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Generate Word document for counseling referrals
+     */
+    private function generateReferralsWord($evaluations, $riskObservations, $counselor, $filename)
+    {
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection();
+        
+        // Header
+        $section->addText(
+            'COUNSELING REFERRALS',
+            ['bold' => true, 'size' => 18, 'color' => '1a237e'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addText(
+            'Guidance Counselor: ' . ($counselor->full_name ?? 'N/A'),
+            ['size' => 10, 'color' => '555555'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addText(
+            'Date: ' . now()->format('F d, Y'),
+            ['size' => 10, 'color' => '555555'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        $section->addTextBreak(1);
+        
+        $section->addText(
+            'Total Referrals: ' . ($riskObservations->count() + $evaluations->count()),
+            ['bold' => true, 'size' => 11, 'color' => '1a237e']
+        );
+        $section->addTextBreak(1);
+        
+        // Create table
+        $table = $section->addTable([
+            'borderSize' => 6,
+            'borderColor' => 'd1d5db',
+            'width' => 5000
+        ]);
+        
+        // Header row
+        $table->addRow(500);
+        $table->addCell(800, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(1500, ['bgColor' => '1a237e'])->addText('Type', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Student', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2000, ['bgColor' => '1a237e'])->addText('Referred By', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Reason/Risk', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(1500, ['bgColor' => '1a237e'])->addText('Status', ['bold' => true, 'color' => 'FFFFFF']);
+        
+        $index = 1;
+        
+        // Add risk observations
+        foreach ($riskObservations as $obs) {
+            $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
+            $behaviors = is_array($obs->observed_behaviors) 
+                ? $obs->observed_behaviors 
+                : json_decode($obs->observed_behaviors, true) ?? [];
+            $behaviorText = count($behaviors) > 0 ? implode(', ', array_slice($behaviors, 0, 2)) : 'Risk Assessment';
+            if(count($behaviors) > 2) $behaviorText .= '...';
+            
+            $table->addRow();
+            $table->addCell(800, ['bgColor' => $bgColor])->addText((string)$index++);
+            $table->addCell(1500, ['bgColor' => $bgColor])->addText('Risk Assessment');
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($obs->student->full_name ?? 'N/A'));
+            $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($obs->teacher->full_name ?? 'N/A'));
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText($obs->risk_status);
+            $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($obs->counseling_status ?? 'pending'));
+        }
+        
+        // Add regular evaluations
+        foreach ($evaluations as $eval) {
+            $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
+            
+            $table->addRow();
+            $table->addCell(800, ['bgColor' => $bgColor])->addText((string)$index++);
+            $table->addCell(1500, ['bgColor' => $bgColor])->addText('Referral');
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($eval->student->full_name ?? 'N/A'));
+            $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($eval->teacher->full_name ?? 'N/A'));
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText(substr($eval->comments ?? 'N/A', 0, 50) . '...');
+            $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($eval->status ?? 'pending'));
+        }
+        
+        $section->addTextBreak(2);
+        $section->addText(
+            'Generated by Grade Evaluation System',
+            ['size' => 8, 'color' => '666666'],
+            ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]
+        );
+        
+        $fileName = $filename . '.docx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'word_');
+        
+        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+        $objWriter->save($tempFile);
+        
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 }

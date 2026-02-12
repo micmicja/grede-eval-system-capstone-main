@@ -430,7 +430,13 @@
                                             </a>
                                             
                                             {{-- Observation Button --}}
-                                            @if($student->observations->count() > 0)
+                                            @php
+                                                $hasReferredObservation = $student->observations()
+                                                    ->where('referred_to_councilor', true)
+                                                    ->exists();
+                                            @endphp
+                                            
+                                            @if($hasReferredObservation)
                                                 <button type="button" class="btn btn-sm btn-secondary text-white me-1" disabled
                                                     title="Student already referred to counselor">
                                                     <span class="material-symbols-rounded"
@@ -470,7 +476,12 @@
 
             {{-- Observation Modals for each student --}}
             @foreach($students as $student)
-                @if($student->observations->count() == 0)
+                @php
+                    $hasReferredObservation = $student->observations()
+                        ->where('referred_to_councilor', true)
+                        ->exists();
+                @endphp
+                @if(!$hasReferredObservation)
                     @include('components.observation-modal', ['student' => $student])
                 @endif
             @endforeach

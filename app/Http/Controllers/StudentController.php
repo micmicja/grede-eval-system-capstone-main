@@ -27,6 +27,8 @@ class StudentController extends Controller
         $teacherId = Auth::id();
 
         // Check if student already has an observation referred to councilor
+        // Allow multiple observations for non-referred students (Low/Mid Risk)
+        // But prevent duplicate referrals for High/Mid High Risk students
         $existingObservation = DB::table('student_observations')
             ->where('student_id', $studentId)
             ->where('referred_to_councilor', true)
@@ -42,8 +44,8 @@ class StudentController extends Controller
         // Step B: Determine Risk Level
         $riskStatus = $this->determineRiskLevel($average);
 
-        // Step C: The Councilor Trigger
-        $referredToCouncilor = in_array($riskStatus, ['High Risk', 'Mid High Risk']);
+        // Step C: The Councilor Trigger - All risk levels are referred to counselor
+        $referredToCouncilor = in_array($riskStatus, ['High Risk', 'Mid High Risk', 'Mid Risk', 'Low Risk']);
 
         // Save the observation
         $observation = DB::table('student_observations')->insert([
