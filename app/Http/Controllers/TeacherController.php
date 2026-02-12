@@ -233,7 +233,29 @@ class TeacherController extends Controller
         return redirect()->route('Dashboard.teacher')->with('success', 'Student added successfully.');
     }
 
+    // UPDATE STUDENT FUNCTION
+    public function updateStudent(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+        
+        // Validate the request - allow same student_id if it's the same student
+        $validatedData = $request->validate([
+            'student_id' => 'required|string|max:255|unique:students,student_id,' . $id,
+            'full_name' => 'required|string|max:255',
+            'section' => 'required|string|max:255',
+            'subject' => 'required|string|max:255',
+        ]);
 
+        // Update the student
+        $student->update([
+            'student_id' => $validatedData['student_id'],
+            'full_name' => $validatedData['full_name'],
+            'section' => $validatedData['section'],
+            'subject' => $validatedData['subject'],
+        ]);
+
+        return redirect()->route('Dashboard.teacher')->with('success', 'Student updated successfully.');
+    }
 
     //  Delete Student Function
     public function destroy($id)

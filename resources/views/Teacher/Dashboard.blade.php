@@ -444,6 +444,11 @@
                                                 </button>
                                             @endif
                                             
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                                data-bs-toggle="modal" data-bs-target="#editModal{{ $student->id }}">
+                                                <span class="material-symbols-rounded" style="font-size: 16px;">edit</span> Edit
+                                            </button>
+                                            
                                             <button type="button" class="btn btn-sm btn-outline-danger"
                                                 data-bs-toggle="modal" data-bs-target="#deleteModal{{ $student->id }}">
                                                 Delete
@@ -468,6 +473,50 @@
                 @if($student->observations->count() == 0)
                     @include('components.observation-modal', ['student' => $student])
                 @endif
+            @endforeach
+
+            {{-- Edit Student Modals --}}
+            @foreach($students as $student)
+                <div class="modal fade" id="editModal{{ $student->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $student->id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="editModalLabel{{ $student->id }}">
+                                    <span class="material-symbols-rounded" style="font-size: 22px;">edit</span> Edit Student
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form action="{{ route('student.update', $student->id) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="edit_student_id{{ $student->id }}" class="form-label">Student ID <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_student_id{{ $student->id }}" name="student_id" value="{{ $student->student_id }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_full_name{{ $student->id }}" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_full_name{{ $student->id }}" name="full_name" value="{{ $student->full_name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_section{{ $student->id }}" class="form-label">Section <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_section{{ $student->id }}" name="section" value="{{ $student->section }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_subject{{ $student->id }}" class="form-label">Subject <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_subject{{ $student->id }}" name="subject" value="{{ $student->subject }}" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="material-symbols-rounded" style="font-size: 18px;">save</span> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             @endforeach
 
             {{-- Delete Confirmation Modals for each student --}}

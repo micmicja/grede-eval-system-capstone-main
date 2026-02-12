@@ -26,20 +26,33 @@ class ExportController extends Controller
         
         $students = Student::where('teacher_id', $teacherId)->get();
         
+        // Get teacher settings
+        $settings = TeacherSetting::where('user_id', $teacherId)->first();
+        
+        // Calculate risk status for each student
+        $studentsWithRisk = $students->map(function ($student) use ($teacherId, $settings) {
+            $overallScore = $this->calculateStudentOverallScore($student, $teacherId, $settings);
+            $riskStatus = $this->determineRiskStatus($overallScore);
+            
+            $student->overall_score = $overallScore;
+            $student->risk_status = $riskStatus;
+            return $student;
+        });
+        
         $format = $request->input('format', 'pdf');
         $filename = 'student-list-' . Carbon::now()->format('Y-m-d');
         
         if ($format === 'excel') {
-            return $this->generateStudentListCSV($students, $filename);
+            return $this->generateStudentListCSV($studentsWithRisk, $filename);
         }
         
         if ($format === 'word') {
-            return $this->generateStudentListWord($students, $teacher, $filename);
+            return $this->generateStudentListWord($studentsWithRisk, $teacher, $filename);
         }
         
         // Default to PDF
         $pdf = Pdf::loadView('exports.student-list', [
-            'students' => $students,
+            'students' => $studentsWithRisk,
             'teacher' => $teacher,
             'date' => Carbon::now()->format('F d, Y')
         ]);
@@ -342,7 +355,7 @@ class ExportController extends Controller
             fputcsv($file, []);
             
             // Add headers
-            fputcsv($file, ['No.', 'Student ID', 'Student Name', 'Section', 'Subject']);
+            fputcsv($file, ['No.', 'Student ID', 'Student Name', 'Section', 'Subject', 'Risk Status']);
             
             // Add data
             foreach ($students as $index => $student) {
@@ -351,7 +364,8 @@ class ExportController extends Controller
                     $student->student_id ?? 'N/A',
                     $student->full_name,
                     $student->section,
-                    $student->subject ?? 'N/A'
+                    $student->subject ?? 'N/A',
+                    $student->risk_status ?? 'N/A'
                 ]);
             }
             
@@ -585,19 +599,32 @@ class ExportController extends Controller
         
         // Header row with dark blue background
         $table->addRow(500);
-        $table->addCell(1500, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
-        $table->addCell(3000, ['bgColor' => '1a237e'])->addText('Student ID', ['bold' => true, 'color' => 'FFFFFF']);
-        $table->addCell(4000, ['bgColor' => '1a237e'])->addText('Name', ['bold' => true, 'color' => 'FFFFFF']);
-        $table->addCell(3000, ['bgColor' => '1a237e'])->addText('Section', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(1000, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Student ID', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(3500, ['bgColor' => '1a237e'])->addText('Name', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Section', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Risk Status', ['bold' => true, 'color' => 'FFFFFF']);
         
         // Data rows with alternating background
         foreach ($students as $index => $student) {
             $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
+            
+            // Determine risk status color
+            $riskColor = '28a745'; // Low Risk (green)
+            if ($student->risk_status === 'High Risk') {
+                $riskColor = 'dc3545'; // red
+            } elseif ($student->risk_status === 'Mid High Risk') {
+                $riskColor = 'fd7e14'; // orange
+            } elseif ($student->risk_status === 'Mid Risk') {
+                $riskColor = 'ffc107'; // yellow/amber
+            }
+            
             $table->addRow();
-            $table->addCell(1500, ['bgColor' => $bgColor])->addText((string)($index + 1));
-            $table->addCell(3000, ['bgColor' => $bgColor])->addText((string)($student->student_id ?? 'N/A'));
-            $table->addCell(4000, ['bgColor' => $bgColor])->addText((string)($student->full_name ?? 'N/A'));
-            $table->addCell(3000, ['bgColor' => $bgColor])->addText((string)($student->section ?? 'N/A'));
+            $table->addCell(1000, ['bgColor' => $bgColor])->addText((string)($index + 1));
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($student->student_id ?? 'N/A'));
+            $table->addCell(3500, ['bgColor' => $bgColor])->addText((string)($student->full_name ?? 'N/A'));
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($student->section ?? 'N/A'));
+            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($student->risk_status ?? 'N/A'), ['bold' => true, 'color' => $riskColor]);
         }
         
         // Footer
@@ -1020,5 +1047,110 @@ class ExportController extends Controller
         $objWriter->save($tempFile);
         
         return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Calculate overall score for a student
+     */
+    private function calculateStudentOverallScore($student, $teacherId, $settings)
+    {
+        // Determine current semester
+        $year = Carbon::now()->year;
+        $month = Carbon::now()->month;
+        $semester = $month <= 6 ? 1 : 2;
+        
+        if ($semester === 1) {
+            $start = Carbon::create($year, 1, 1)->startOfDay();
+            $end = Carbon::create($year, 6, 30)->endOfDay();
+        } else {
+            $start = Carbon::create($year, 7, 1)->startOfDay();
+            $end = Carbon::create($year, 12, 31)->endOfDay();
+        }
+        
+        // Get all grades for this student
+        $allActivities = Quiz_exam_activity::where('full_name', $student->full_name)
+            ->where('user_id', $teacherId)
+            ->whereBetween('date_taken', [$start->toDateString(), $end->toDateString()])
+            ->get();
+        
+        $quizzes = $allActivities->where('activity_type', 'Quiz');
+        $exams = $allActivities->where('activity_type', 'Exam');
+        $activities = $allActivities->where('activity_type', 'Activity');
+        $projects = $allActivities->where('activity_type', 'Project');
+        $recitations = $allActivities->where('activity_type', 'Recitation');
+        
+        // Get attendance
+        $attendanceRecords = Attendance::where('full_name', $student->full_name)
+            ->where('user_id', $teacherId)
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->get();
+        
+        // Calculate averages
+        $quizAvg = $quizzes->count() > 0 ? $quizzes->avg('score') : 0;
+        $examAvg = $exams->count() > 0 ? $exams->avg('score') : 0;
+        $activityAvg = $activities->count() > 0 ? $activities->avg('score') : 0;
+        $projectAvg = $projects->count() > 0 ? $projects->avg('score') : 0;
+        $recitationAvg = $recitations->count() > 0 ? $recitations->avg('score') : 0;
+        
+        $totalAttendance = $attendanceRecords->count();
+        $presentCount = $attendanceRecords->where('present', true)->count();
+        $attendancePercentage = $totalAttendance > 0 ? ($presentCount / $totalAttendance) * 100 : 0;
+        
+        // Get weights
+        $weights = [
+            'attendance' => $settings->attendance_weight ?? 10,
+            'quiz' => $settings->quiz_weight ?? 15,
+            'exam' => $settings->exam_weight ?? 25,
+            'activity' => $settings->activity_weight ?? 25,
+            'project' => $settings->project_weight ?? 15,
+            'recitation' => $settings->recitation_weight ?? 10
+        ];
+        
+        // Calculate overall score
+        $numerator = 0;
+        $denominator = 0;
+        
+        if ($totalAttendance > 0) {
+            $numerator += ($attendancePercentage * $weights['attendance']);
+            $denominator += $weights['attendance'];
+        }
+        if ($quizzes->count() > 0) {
+            $numerator += ($quizAvg * $weights['quiz']);
+            $denominator += $weights['quiz'];
+        }
+        if ($exams->count() > 0) {
+            $numerator += ($examAvg * $weights['exam']);
+            $denominator += $weights['exam'];
+        }
+        if ($activities->count() > 0) {
+            $numerator += ($activityAvg * $weights['activity']);
+            $denominator += $weights['activity'];
+        }
+        if ($projects->count() > 0) {
+            $numerator += ($projectAvg * $weights['project']);
+            $denominator += $weights['project'];
+        }
+        if ($recitations->count() > 0) {
+            $numerator += ($recitationAvg * $weights['recitation']);
+            $denominator += $weights['recitation'];
+        }
+        
+        return $denominator > 0 ? round(($numerator / $denominator), 2) : 0;
+    }
+
+    /**
+     * Determine risk status based on overall score
+     */
+    private function determineRiskStatus($score)
+    {
+        if ($score < 60) {
+            return 'High Risk';
+        } elseif ($score >= 60 && $score <= 75) {
+            return 'Mid High Risk';
+        } elseif ($score >= 76 && $score <= 89) {
+            return 'Mid Risk';
+        } else {
+            return 'Low Risk';
+        }
     }
 }

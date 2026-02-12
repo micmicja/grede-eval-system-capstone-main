@@ -52,6 +52,9 @@ Route::middleware(['role:teacher', 'no-cache'])->prefix('Teacher')->group(functi
     // Delete Student route
     Route::delete('/student/{id}', [TeacherController::class, 'destroy'])->name('student.destroy');
 
+    // Update Student route
+    Route::put('/student/{id}', [TeacherController::class, 'updateStudent'])->name('student.update');
+
     // Get student overall score for observation modal
     Route::get('/student/{id}/overall-score', [TeacherController::class, 'getStudentOverallScore'])->name('student.overall-score');
 

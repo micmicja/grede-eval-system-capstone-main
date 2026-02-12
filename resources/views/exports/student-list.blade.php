@@ -143,6 +143,7 @@
                 <th>Full Name</th>
                 <th>Section/Course</th>
                 <th>Subject</th>
+                <th>Risk Status</th>
             </tr>
         </thead>
         <tbody>
@@ -153,6 +154,11 @@
                 <td>{{ $student->full_name }}</td>
                 <td>{{ $student->section }}</td>
                 <td>{{ $student->subject }}</td>
+                <td style="font-weight: bold; color: {{ 
+                    $student->risk_status === 'High Risk' ? '#dc3545' : 
+                    ($student->risk_status === 'Mid High Risk' ? '#fd7e14' : 
+                    ($student->risk_status === 'Mid Risk' ? '#ffc107' : '#28a745')) 
+                }};">{{ $student->risk_status ?? 'N/A' }}</td>
             </tr>
             @endforeach
         </tbody>
