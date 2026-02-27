@@ -167,7 +167,7 @@ Route::middleware(['role:councilor', 'no-cache'])->prefix('councilor')->group(fu
     Route::post('/schedule/{id}', [EvalutionCommentController::class, 'setSchedule'])->name('councilor.setSchedule');
     Route::post('/schedule-risk/{id}', [EvalutionCommentController::class, 'scheduleRiskObservation'])->name('councilor.scheduleRiskObservation');
     Route::patch('/observation/{id}/status', [EvalutionCommentController::class, 'updateObservationStatus'])->name('councilor.updateObservationStatus');
-    Route::patch('/councilor/referral/{id}/status', [EvalutionCommentController::class, 'updateStatus'])->name('councilor.updateStatus');
+    Route::patch('/councilor/referral/{id}/status', [EvalutionCommentController::class, 'updateStatus'])->name('councilor.referral.updateStatus');
     
     // Export counseling referrals
     Route::get('/export', [EvalutionCommentController::class, 'exportReferrals'])->name('councilor.export');
