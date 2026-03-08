@@ -83,7 +83,13 @@
                             <tbody>
                                 @foreach($students as $student)
                                 <tr>
-                                    <td class="fw-bold">{{ $student->full_name }}</td>
+                                    <td class="fw-bold">
+                                        @if($student->last_name)
+                                            {{ ucwords(strtolower($student->last_name)) }}, {{ ucwords(strtolower($student->first_name)) }}{{ $student->middle_name ? ' '.ucwords(strtolower($student->middle_name)) : '' }}
+                                        @else
+                                            {{ ucwords(strtolower($student->full_name)) }}
+                                        @endif
+                                    </td>
                                     <td>
                                         <span class="badge bg-light text-dark border">{{ $student->section }}</span>
                                     </td>

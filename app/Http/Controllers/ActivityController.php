@@ -13,7 +13,10 @@ class ActivityController extends Controller
     public function show(Request $request)
     {
         $teacher = Auth::user();
-        $students = Student::where('teacher_id', $teacher->id)->get();
+        $students = Student::where('teacher_id', $teacher->id)
+            ->orderByRaw('LOWER(last_name) ASC')
+            ->orderByRaw('LOWER(first_name) ASC')
+            ->get();
 
         return view('Activity.Show', compact('students', 'teacher'));
     }

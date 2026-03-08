@@ -382,7 +382,7 @@ class EvalutionCommentController extends Controller
             fputcsv($file, ['Generated on: ' . Carbon::now()->format('F d, Y')]);
             fputcsv($file, []);
             
-            fputcsv($file, ['No.', 'Type', 'Student Name', 'Section', 'Referred By', 'Reason/Risk Level', 'Status', 'Schedule']);
+            fputcsv($file, ['No.', 'Type', 'Student Name', 'Section', 'Subject', 'Referred By', 'Reason/Risk Level', 'Status', 'Schedule']);
             
             $index = 1;
             
@@ -398,6 +398,7 @@ class EvalutionCommentController extends Controller
                     'Risk Assessment',
                     $obs->student->full_name ?? 'N/A',
                     $obs->student->section ?? 'N/A',
+                    $obs->student->subject ?? 'N/A',
                     $obs->teacher->full_name ?? 'N/A',
                     $obs->risk_status . ' - ' . $behaviorText,
                     ucfirst($obs->counseling_status ?? 'pending'),
@@ -412,6 +413,7 @@ class EvalutionCommentController extends Controller
                     'Referral',
                     $eval->student->full_name ?? 'N/A',
                     $eval->student->section ?? 'N/A',
+                    $eval->student->subject ?? 'N/A',
                     $eval->teacher->full_name ?? 'N/A',
                     $eval->comments ?? 'N/A',
                     ucfirst($eval->status ?? 'pending'),
@@ -469,6 +471,7 @@ class EvalutionCommentController extends Controller
         $table->addCell(800, ['bgColor' => '1a237e'])->addText('No.', ['bold' => true, 'color' => 'FFFFFF']);
         $table->addCell(1500, ['bgColor' => '1a237e'])->addText('Type', ['bold' => true, 'color' => 'FFFFFF']);
         $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Student', ['bold' => true, 'color' => 'FFFFFF']);
+        $table->addCell(1800, ['bgColor' => '1a237e'])->addText('Subject', ['bold' => true, 'color' => 'FFFFFF']);
         $table->addCell(2000, ['bgColor' => '1a237e'])->addText('Referred By', ['bold' => true, 'color' => 'FFFFFF']);
         $table->addCell(2500, ['bgColor' => '1a237e'])->addText('Reason/Risk', ['bold' => true, 'color' => 'FFFFFF']);
         $table->addCell(1500, ['bgColor' => '1a237e'])->addText('Status', ['bold' => true, 'color' => 'FFFFFF']);
@@ -488,6 +491,7 @@ class EvalutionCommentController extends Controller
             $table->addCell(800, ['bgColor' => $bgColor])->addText((string)$index++);
             $table->addCell(1500, ['bgColor' => $bgColor])->addText('Risk Assessment');
             $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($obs->student->full_name ?? 'N/A'));
+            $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($obs->student->subject ?? 'N/A'));
             $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($obs->teacher->full_name ?? 'N/A'));
             $table->addCell(2500, ['bgColor' => $bgColor])->addText($obs->risk_status);
             $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($obs->counseling_status ?? 'pending'));
@@ -501,6 +505,7 @@ class EvalutionCommentController extends Controller
             $table->addCell(800, ['bgColor' => $bgColor])->addText((string)$index++);
             $table->addCell(1500, ['bgColor' => $bgColor])->addText('Referral');
             $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($eval->student->full_name ?? 'N/A'));
+            $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($eval->student->subject ?? 'N/A'));
             $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($eval->teacher->full_name ?? 'N/A'));
             $table->addCell(2500, ['bgColor' => $bgColor])->addText(substr($eval->comments ?? 'N/A', 0, 50) . '...');
             $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($eval->status ?? 'pending'));

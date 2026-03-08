@@ -13,7 +13,10 @@ class RecitationController extends Controller
     public function show()
     {
         $teacher = Auth::user();
-        $students = Student::where('teacher_id', $teacher->id)->get();
+        $students = Student::where('teacher_id', $teacher->id)
+            ->orderByRaw('LOWER(last_name) ASC')
+            ->orderByRaw('LOWER(first_name) ASC')
+            ->get();
         return view('Recitation.Show', compact('students', 'teacher'));
     }
 

@@ -162,14 +162,15 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 5%;">#</th>
-                <th style="width: 12%;">Type</th>
-                <th style="width: 18%;">Student</th>
-                <th style="width: 10%;">Section</th>
-                <th style="width: 15%;">Referred By</th>
-                <th style="width: 25%;">Reason/Risk Level</th>
-                <th style="width: 10%;">Status</th>
-                <th style="width: 15%;">Schedule</th>
+                <th style="width: 4%;">#</th>
+                <th style="width: 11%;">Type</th>
+                <th style="width: 16%;">Student</th>
+                <th style="width: 9%;">Section</th>
+                <th style="width: 12%;">Subject</th>
+                <th style="width: 13%;">Referred By</th>
+                <th style="width: 20%;">Reason/Risk Level</th>
+                <th style="width: 8%;">Status</th>
+                <th style="width: 7%;">Schedule</th>
             </tr>
         </thead>
         <tbody>
@@ -182,6 +183,7 @@
                 <td><strong>Risk Assessment</strong></td>
                 <td>{{ $observation->student->full_name ?? 'N/A' }}</td>
                 <td>{{ $observation->student->section ?? 'N/A' }}</td>
+                <td>{{ $observation->student->subject ?? 'N/A' }}</td>
                 <td>{{ $observation->teacher->full_name ?? 'N/A' }}</td>
                 <td>
                     <span class="badge {{ $observation->risk_status === 'High Risk' ? 'badge-danger' : 'badge-warning' }}">
@@ -216,6 +218,7 @@
                 <td>Referral</td>
                 <td>{{ $eval->student->full_name ?? 'N/A' }}</td>
                 <td>{{ $eval->student->section ?? 'N/A' }}</td>
+                <td>{{ $eval->student->subject ?? 'N/A' }}</td>
                 <td>{{ $eval->teacher->full_name ?? 'N/A' }}</td>
                 <td style="font-size: 8pt;">{{ substr($eval->comments ?? 'N/A', 0, 80) }}{{ strlen($eval->comments ?? '') > 80 ? '...' : '' }}</td>
                 <td>

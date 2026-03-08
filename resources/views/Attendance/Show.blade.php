@@ -67,7 +67,13 @@
                                     @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ $student->full_name }}</td>
+                                        <td>
+                                            @if($student->last_name)
+                                                {{ ucwords(strtolower($student->last_name)) }}, {{ ucwords(strtolower($student->first_name)) }}{{ $student->middle_name ? ' ' . ucwords(strtolower($student->middle_name)) : '' }}
+                                            @else
+                                                {{ ucwords(strtolower($student->full_name)) }}
+                                            @endif
+                                        </td>
                                         <td>{{ $student->section }}</td>
                                         <td>{{ $student->subject }}</td>
                                         <td class="text-center">

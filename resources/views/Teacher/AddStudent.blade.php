@@ -69,9 +69,19 @@
                         <input type="text" class="form-control" name="student_id" required>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" name="full_name" required>
+                    <div class="col-md-4">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ old('first_name') }}" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Middle Name <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" name="middle_name" value="{{ old('middle_name') }}">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" required>
                     </div>
                     
                     <div class="col-md-6">

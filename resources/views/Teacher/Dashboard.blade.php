@@ -396,7 +396,13 @@
                                 <tbody>
                                     @forelse($students as $student)
                                     <tr>
-                                        <td class="fw-bold">{{ $student->full_name }}</td>
+                                        <td class="fw-bold">
+                                            @if($student->last_name)
+                                                {{ ucwords(strtolower($student->last_name)) }}, {{ ucwords(strtolower($student->first_name)) }}{{ $student->middle_name ? ' ' . ucwords(strtolower($student->middle_name)) : '' }}
+                                            @else
+                                                {{ ucwords(strtolower($student->full_name)) }}
+                                            @endif
+                                        </td>
                                         <td><span class="badge bg-light text-dark border">{{ $student->section }}</span>
                                         </td>
                                         <td>
@@ -506,8 +512,16 @@
                                         <input type="text" class="form-control" id="edit_student_id{{ $student->id }}" name="student_id" value="{{ $student->student_id }}" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="edit_full_name{{ $student->id }}" class="form-label">Full Name <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="edit_full_name{{ $student->id }}" name="full_name" value="{{ $student->full_name }}" required>
+                                        <label for="edit_first_name{{ $student->id }}" class="form-label">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_first_name{{ $student->id }}" name="first_name" value="{{ $student->first_name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_middle_name{{ $student->id }}" class="form-label">Middle Name</label>
+                                        <input type="text" class="form-control" id="edit_middle_name{{ $student->id }}" name="middle_name" value="{{ $student->middle_name }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_last_name{{ $student->id }}" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_last_name{{ $student->id }}" name="last_name" value="{{ $student->last_name }}" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="edit_section{{ $student->id }}" class="form-label">Section <span class="text-danger">*</span></label>

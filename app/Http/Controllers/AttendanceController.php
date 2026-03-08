@@ -20,7 +20,10 @@ class AttendanceController extends Controller
         $teacher = Auth::user();
 
         // Get students taught by this teacher
-        $students = Student::where('teacher_id', $teacher->id)->get();
+        $students = Student::where('teacher_id', $teacher->id)
+            ->orderByRaw('LOWER(last_name) ASC')
+            ->orderByRaw('LOWER(first_name) ASC')
+            ->get();
 
         // Get existing attendance records for the date
         $attendanceRecords = Attendance::where('user_id', $teacher->id)

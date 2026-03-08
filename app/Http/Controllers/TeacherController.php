@@ -30,6 +30,8 @@ class TeacherController extends Controller
                 // Check if student has been referred to councilor
                 $query->where('referred_to_councilor', true);
             }])
+            ->orderByRaw('LOWER(last_name) ASC')
+            ->orderBy('first_name', 'asc')
             ->get();
 
         $percentage = TeacherSetting::where('user_id', Auth::id())->first();
@@ -76,7 +78,7 @@ class TeacherController extends Controller
         // Get students who have risk assessments for export dropdown
         $studentsWithRisk = Student::where('teacher_id', Auth::id())
             ->whereHas('observations')
-            ->orderBy('full_name', 'asc')
+            ->orderByRaw('LOWER(last_name) ASC')
             ->get();
 
         return view('Teacher.Dashboard', compact('students', 'percentage', 'studentsWithRisk'));
@@ -212,22 +214,32 @@ class TeacherController extends Controller
     public function storeStudent(Request $request)
     {
         // validate the request
+        $teacherId = Auth::user()->id;
         $validatedData = $request->validate([
-            'student_id' => 'required|string|max:255|unique:students,student_id',
-            'full_name' => 'required|string|max:255',
+            'student_id' => 'required|string|max:255|unique:students,student_id,NULL,id,teacher_id,' . $teacherId,
+            'first_name'  => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name'   => 'required|string|max:255',
             'section' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
         ]);
 
-        //  get the id of the currently authenticated teacher
-        $teacherId = Auth::user()->id;
+        $firstName  = ucwords(strtolower(trim($validatedData['first_name'])));
+        $middleName = $validatedData['middle_name'] ? ucwords(strtolower(trim($validatedData['middle_name']))) : null;
+        $lastName   = ucwords(strtolower(trim($validatedData['last_name'])));
+
+        $fullName = trim($firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName);
+
         // create new student
         Student::create([
-            'student_id' => $validatedData['student_id'],
-            'full_name' => $validatedData['full_name'],
-            'section' => $validatedData['section'],
-            'subject' => $validatedData['subject'],
-            'teacher_id' => $teacherId,
+            'student_id'  => $validatedData['student_id'],
+            'first_name'  => $firstName,
+            'middle_name' => $middleName,
+            'last_name'   => $lastName,
+            'full_name'   => $fullName,
+            'section'     => $validatedData['section'],
+            'subject'     => $validatedData['subject'],
+            'teacher_id'  => $teacherId,
         ]);
 
         return redirect()->route('Dashboard.teacher')->with('success', 'Student added successfully.');
@@ -238,20 +250,31 @@ class TeacherController extends Controller
     {
         $student = Student::findOrFail($id);
         
-        // Validate the request - allow same student_id if it's the same student
+        // Validate the request - allow same student_id if it's the same student, unique per teacher
         $validatedData = $request->validate([
-            'student_id' => 'required|string|max:255|unique:students,student_id,' . $id,
-            'full_name' => 'required|string|max:255',
-            'section' => 'required|string|max:255',
-            'subject' => 'required|string|max:255',
+            'student_id'  => 'required|string|max:255|unique:students,student_id,' . $id . ',id,teacher_id,' . $student->teacher_id,
+            'first_name'  => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name'   => 'required|string|max:255',
+            'section'     => 'required|string|max:255',
+            'subject'     => 'required|string|max:255',
         ]);
+
+        $firstName  = ucwords(strtolower(trim($validatedData['first_name'])));
+        $middleName = $validatedData['middle_name'] ? ucwords(strtolower(trim($validatedData['middle_name']))) : null;
+        $lastName   = ucwords(strtolower(trim($validatedData['last_name'])));
+
+        $fullName = trim($firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName);
 
         // Update the student
         $student->update([
-            'student_id' => $validatedData['student_id'],
-            'full_name' => $validatedData['full_name'],
-            'section' => $validatedData['section'],
-            'subject' => $validatedData['subject'],
+            'student_id'  => $validatedData['student_id'],
+            'first_name'  => $firstName,
+            'middle_name' => $middleName,
+            'last_name'   => $lastName,
+            'full_name'   => $fullName,
+            'section'     => $validatedData['section'],
+            'subject'     => $validatedData['subject'],
         ]);
 
         return redirect()->route('Dashboard.teacher')->with('success', 'Student updated successfully.');
@@ -368,7 +391,7 @@ class TeacherController extends Controller
         }
         
         $students = $studentsQuery->orderBy('section')
-            ->orderBy('full_name')
+            ->orderByRaw('LOWER(last_name) ASC')
             ->get();
 
         // Get existing scores for this quiz (exclude placeholder)
@@ -519,7 +542,7 @@ class TeacherController extends Controller
         if ($selectedSection) {
             $studentsQuery->where('section', $selectedSection);
         }
-        $students = $studentsQuery->orderBy('section')->orderBy('full_name')->get();
+        $students = $studentsQuery->orderByRaw('LOWER(section) ASC')->orderByRaw('LOWER(last_name) ASC')->get();
 
         $existingScoresData = \App\Models\Quiz_exam_activity::where('user_id', $teacherId)
             ->where('activity_title', $examName)
@@ -628,7 +651,7 @@ class TeacherController extends Controller
         if ($selectedSection) {
             $studentsQuery->where('section', $selectedSection);
         }
-        $students = $studentsQuery->orderBy('section')->orderBy('full_name')->get();
+        $students = $studentsQuery->orderByRaw('LOWER(section) ASC')->orderByRaw('LOWER(last_name) ASC')->get();
 
         $existingScoresData = \App\Models\Quiz_exam_activity::where('user_id', $teacherId)
             ->where('activity_title', $activityName)
@@ -737,7 +760,7 @@ class TeacherController extends Controller
         if ($selectedSection) {
             $studentsQuery->where('section', $selectedSection);
         }
-        $students = $studentsQuery->orderBy('section')->orderBy('full_name')->get();
+        $students = $studentsQuery->orderByRaw('LOWER(section) ASC')->orderByRaw('LOWER(last_name) ASC')->get();
 
         $existingScoresData = \App\Models\Quiz_exam_activity::where('user_id', $teacherId)
             ->where('activity_title', $projectName)
@@ -846,7 +869,7 @@ class TeacherController extends Controller
         if ($selectedSection) {
             $studentsQuery->where('section', $selectedSection);
         }
-        $students = $studentsQuery->orderBy('section')->orderBy('full_name')->get();
+        $students = $studentsQuery->orderByRaw('LOWER(section) ASC')->orderByRaw('LOWER(last_name) ASC')->get();
 
         $existingScoresData = \App\Models\Quiz_exam_activity::where('user_id', $teacherId)
             ->where('activity_title', $recitationName)

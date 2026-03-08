@@ -48,9 +48,12 @@
                                     name="full_name" required>
                                     <option value="">-- Select Student --</option>
                                     @foreach($students as $student)
-                                    <option value="{{ $student->full_name }}" {{ old('full_name')==$student->full_name ?
-                                        'selected' : '' }}>
-                                        {{ $student->full_name }}
+                                    <option value="{{ $student->full_name }}" {{ old('full_name')==$student->full_name ? 'selected' : '' }}>
+                                        @if($student->last_name)
+                                            {{ ucwords(strtolower($student->last_name)) }}, {{ ucwords(strtolower($student->first_name)) }}{{ $student->middle_name ? ' '.ucwords(strtolower($student->middle_name)) : '' }}
+                                        @else
+                                            {{ ucwords(strtolower($student->full_name)) }}
+                                        @endif
                                     </option>
                                     @endforeach
                                 </select>
@@ -134,7 +137,7 @@
                                 @forelse($teacher->quiz_exam_activity()->where('activity_type',
                                 'activity')->orderBy('date_taken', 'desc')->limit(10)->get() as $act)
                                 <tr>
-                                    <td>{{ $act->full_name }}</td>
+                                    <td>{{ ucwords(strtolower($act->full_name)) }}</td>
                                     <td>{{ $act->activity_title }}</td>
                                     <td>{{ \Carbon\Carbon::parse($act->date_taken)->format('M d, Y') }}</td>
                                     <td>
