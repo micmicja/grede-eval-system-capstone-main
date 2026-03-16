@@ -155,8 +155,7 @@
     </div>
 
     <div class="summary">
-        <strong>Total Referrals:</strong> {{ $riskObservations->count() + $evaluations->count() }}
-        (Risk Assessments: {{ $riskObservations->count() }}, Regular Referrals: {{ $evaluations->count() }})
+        <strong>Total Referrals:</strong> {{ $referrals->count() }}
     </div>
 
     <table>
@@ -176,58 +175,57 @@
         <tbody>
             @php $index = 1; @endphp
             
-            {{-- Risk Observations --}}
-            @foreach($riskObservations as $observation)
+            {{-- All referrals in merged alphabetical order --}}
+            @foreach($referrals as $item)
             <tr>
                 <td>{{ $index++ }}</td>
-                <td><strong>Risk Assessment</strong></td>
-                <td>{{ $observation->student->full_name ?? 'N/A' }}</td>
-                <td>{{ $observation->student->section ?? 'N/A' }}</td>
-                <td>{{ $observation->student->subject ?? 'N/A' }}</td>
-                <td>{{ $observation->teacher->full_name ?? 'N/A' }}</td>
                 <td>
-                    <span class="badge {{ $observation->risk_status === 'High Risk' ? 'badge-danger' : 'badge-warning' }}">
-                        {{ $observation->risk_status }}
-                    </span>
-                    @php
-                        $behaviors = is_array($observation->observed_behaviors) 
-                            ? $observation->observed_behaviors 
-                            : json_decode($observation->observed_behaviors, true) ?? [];
-                        if(count($behaviors) > 0) {
-                            echo '<br><small>' . implode(', ', array_slice($behaviors, 0, 2));
-                            if(count($behaviors) > 2) echo '...';
-                            echo '</small>';
-                        }
-                    @endphp
+                    @if($item->referral_type === 'risk_assessment')
+                        <strong>Risk Assessment</strong>
+                    @else
+                        <strong>Referral</strong>
+                    @endif
+                </td>
+                <td>{{ $item->student->full_name ?? 'N/A' }}</td>
+                <td>{{ $item->student->section ?? 'N/A' }}</td>
+                <td>{{ $item->student->subject ?? 'N/A' }}</td>
+                <td>{{ $item->teacher->full_name ?? 'N/A' }}</td>
+                <td>
+                    @if($item->referral_type === 'risk_assessment')
+                        <span class="badge {{ $item->risk_status === 'High Risk' ? 'badge-danger' : 'badge-warning' }}">
+                            {{ $item->risk_status }}
+                        </span>
+                        @php
+                            $behaviors = is_array($item->observed_behaviors) 
+                                ? $item->observed_behaviors 
+                                : json_decode($item->observed_behaviors, true) ?? [];
+                            if(count($behaviors) > 0) {
+                                echo '<br><small>' . implode(', ', array_slice($behaviors, 0, 2));
+                                if(count($behaviors) > 2) echo '...';
+                                echo '</small>';
+                            }
+                        @endphp
+                    @else
+                        {{ $item->comments ?? 'N/A' }}
+                    @endif
                 </td>
                 <td>
-                    <span class="badge {{ $observation->counseling_status === 'resolved' ? 'badge-success' : ($observation->counseling_status === 'ongoing' ? 'badge-info' : 'badge-warning') }}">
-                        {{ ucfirst($observation->counseling_status ?? 'pending') }}
-                    </span>
+                    @if($item->referral_type === 'risk_assessment')
+                        <span class="badge {{ $item->counseling_status === 'resolved' ? 'badge-success' : ($item->counseling_status === 'ongoing' ? 'badge-info' : 'badge-warning') }}">
+                            {{ ucfirst($item->counseling_status ?? 'pending') }}
+                        </span>
+                    @else
+                        <span class="badge {{ $item->status === 'resolved' ? 'badge-success' : ($item->status === 'ongoing' ? 'badge-info' : 'badge-warning') }}">
+                            {{ ucfirst($item->status ?? 'pending') }}
+                        </span>
+                    @endif
                 </td>
                 <td style="font-size: 8pt;">
-                    {{ $observation->scheduled_at ? $observation->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled' }}
-                </td>
-            </tr>
-            @endforeach
-
-            {{-- Regular Evaluations --}}
-            @foreach($evaluations as $eval)
-            <tr>
-                <td>{{ $index++ }}</td>
-                <td>Referral</td>
-                <td>{{ $eval->student->full_name ?? 'N/A' }}</td>
-                <td>{{ $eval->student->section ?? 'N/A' }}</td>
-                <td>{{ $eval->student->subject ?? 'N/A' }}</td>
-                <td>{{ $eval->teacher->full_name ?? 'N/A' }}</td>
-                <td style="font-size: 8pt;">{{ substr($eval->comments ?? 'N/A', 0, 80) }}{{ strlen($eval->comments ?? '') > 80 ? '...' : '' }}</td>
-                <td>
-                    <span class="badge {{ $eval->status === 'resolved' ? 'badge-success' : ($eval->status === 'ongoing' ? 'badge-info' : 'badge-warning') }}">
-                        {{ ucfirst($eval->status ?? 'pending') }}
-                    </span>
-                </td>
-                <td style="font-size: 8pt;">
-                    {{ $eval->scheduled_at ? $eval->scheduled_at->format('M d, Y h:i A') : 'Not Set' }}
+                    @if($item->referral_type === 'risk_assessment')
+                        {{ $item->scheduled_at ? $item->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled' }}
+                    @else
+                        {{ $item->scheduled_at ? $item->scheduled_at->format('M d, Y h:i A') : 'Not Set' }}
+                    @endif
                 </td>
             </tr>
             @endforeach

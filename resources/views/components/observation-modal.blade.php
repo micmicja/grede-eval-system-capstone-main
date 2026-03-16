@@ -130,57 +130,33 @@
                                 {{-- Left Column --}}
                                 <div class="col-md-6">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Lack of study habits" id="behavior1_{{ $student->id }}">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Lack of concentration" id="behavior1_{{ $student->id }}">
                                         <label class="form-check-label" for="behavior1_{{ $student->id }}">
-                                            Lack of study habits
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="No interest in school or subjects" id="behavior2_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior2_{{ $student->id }}">
-                                            No interest in school or subjects
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Lack of concentration" id="behavior3_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior3_{{ $student->id }}">
                                             Lack of concentration
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Learning difficulties" id="behavior4_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior4_{{ $student->id }}">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Learning difficulties" id="behavior2_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior2_{{ $student->id }}">
                                             Learning difficulties
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Poor reading comprehension" id="behavior5_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior5_{{ $student->id }}">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Poor reading comprehension" id="behavior3_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior3_{{ $student->id }}">
                                             Poor reading comprehension
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Afraid to recite or ask questions" id="behavior6_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior6_{{ $student->id }}">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Afraid to recite or ask questions" id="behavior4_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior4_{{ $student->id }}">
                                             Afraid to recite or ask questions
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Incomplete or late submission of requirements" id="behavior7_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior7_{{ $student->id }}">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Incomplete or late submission of requirements" id="behavior5_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior5_{{ $student->id }}">
                                             Incomplete or late submission of requirements
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Lack of parental support or supervision" id="behavior8_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior8_{{ $student->id }}">
-                                            Lack of parental support or supervision
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Family problems" id="behavior9_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior9_{{ $student->id }}">
-                                            Family problems
                                         </label>
                                     </div>
                                 </div>
@@ -188,57 +164,33 @@
                                 {{-- Right Column --}}
                                 <div class="col-md-6">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Health issues" id="behavior10_{{ $student->id }}">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Using phone during lessons" id="behavior6_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior6_{{ $student->id }}">
+                                            Using phone during lessons
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Wearing earphones during classes" id="behavior7_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior7_{{ $student->id }}">
+                                            Wearing earphones during classes
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Not volunteering during group activities" id="behavior8_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior8_{{ $student->id }}">
+                                            Not volunteering during group activities
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Submitting blank or nearly blank quiz or exam papers" id="behavior9_{{ $student->id }}">
+                                        <label class="form-check-label" for="behavior9_{{ $student->id }}">
+                                            Submitting blank or nearly blank quiz or exam papers
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Copying from seatmates during quizzes or exams" id="behavior10_{{ $student->id }}">
                                         <label class="form-check-label" for="behavior10_{{ $student->id }}">
-                                            Health issues
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Lack of sleep" id="behavior11_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior11_{{ $student->id }}">
-                                            Lack of sleep
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Negative influence from friends" id="behavior12_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior12_{{ $student->id }}">
-                                            Negative influence from friends
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Overuse of gadgets / social media" id="behavior13_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior13_{{ $student->id }}">
-                                            Overuse of gadgets / social media
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Fear of failure or anxiety" id="behavior14_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior14_{{ $student->id }}">
-                                            Fear of failure or anxiety
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Lack of self-discipline" id="behavior15_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior15_{{ $student->id }}">
-                                            Lack of self-discipline
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Part-time work or job responsibilities" id="behavior16_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior16_{{ $student->id }}">
-                                            Part-time work or job responsibilities
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Poor relationship with professors or classmates" id="behavior17_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior17_{{ $student->id }}">
-                                            Poor relationship with professors or classmates
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="observed_behaviors[]" value="Overreliance on online resources or AI" id="behavior18_{{ $student->id }}">
-                                        <label class="form-check-label" for="behavior18_{{ $student->id }}">
-                                            Overreliance on online resources or AI
+                                            Copying from seatmates during quizzes or exams
                                         </label>
                                     </div>
                                 </div>

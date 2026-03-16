@@ -154,6 +154,12 @@
                                         <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
                                     </select>
 
+                                    <select name="risk_level" class="form-select form-select-sm rounded-pill" style="width: 150px;">
+                                        <option value="">All Risk Levels</option>
+                                        <option value="High Risk" {{ request('risk_level') == 'High Risk' ? 'selected' : '' }}>🔴 High Risk</option>
+                                        <option value="Mid High Risk" {{ request('risk_level') == 'Mid High Risk' ? 'selected' : '' }}>🟠 Mid High Risk</option>
+                                    </select>
+
                                     <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Apply</button>
                                 </form>
                             </div>

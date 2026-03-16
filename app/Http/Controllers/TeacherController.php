@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 
 class TeacherController extends Controller
@@ -215,8 +216,9 @@ class TeacherController extends Controller
     {
         // validate the request
         $teacherId = Auth::user()->id;
+        
         $validatedData = $request->validate([
-            'student_id' => 'required|string|max:255|unique:students,student_id,NULL,id,teacher_id,' . $teacherId,
+            'student_id' => 'required|string|max:255',
             'first_name'  => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name'   => 'required|string|max:255',
@@ -225,9 +227,37 @@ class TeacherController extends Controller
         ]);
 
         $firstName  = ucwords(strtolower(trim($validatedData['first_name'])));
-        $middleName = $validatedData['middle_name'] ? ucwords(strtolower(trim($validatedData['middle_name']))) : null;
         $lastName   = ucwords(strtolower(trim($validatedData['last_name'])));
 
+        // Check if this student ID exists with a DIFFERENT name
+        $existingWithDifferentName = Student::where('student_id', $validatedData['student_id'])
+            ->where(function ($query) use ($firstName, $lastName) {
+                $query->where('first_name', '!=', $firstName)
+                      ->orWhere('last_name', '!=', $lastName);
+            })
+            ->exists();
+        
+        if ($existingWithDifferentName) {
+            // Get the existing student's name for the error message
+            $existing = Student::where('student_id', $validatedData['student_id'])->first();
+            return redirect()->back()->withInput()->withErrors([
+                'student_id' => 'Student ID ' . $validatedData['student_id'] . ' is already registered with name "' . $existing->first_name . ' ' . $existing->last_name . '". To add this same ID with a different name, contact administration.',
+            ]);
+        }
+
+        // Also check if exact same student already exists 
+        $exactMatch = Student::where('student_id', $validatedData['student_id'])
+            ->where('first_name', $firstName)
+            ->where('last_name', $lastName)
+            ->exists();
+        
+        if ($exactMatch) {
+            return redirect()->back()->withInput()->withErrors([
+                'student_id' => 'This exact student already exists in the system.',
+            ]);
+        }
+
+        $middleName = $validatedData['middle_name'] ? ucwords(strtolower(trim($validatedData['middle_name']))) : null;
         $fullName = trim($firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName);
 
         // create new student
@@ -250,9 +280,9 @@ class TeacherController extends Controller
     {
         $student = Student::findOrFail($id);
         
-        // Validate the request - allow same student_id if it's the same student, unique per teacher
+        // Validate the request
         $validatedData = $request->validate([
-            'student_id'  => 'required|string|max:255|unique:students,student_id,' . $id . ',id,teacher_id,' . $student->teacher_id,
+            'student_id'  => 'required|string|max:255',
             'first_name'  => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name'   => 'required|string|max:255',
@@ -261,9 +291,28 @@ class TeacherController extends Controller
         ]);
 
         $firstName  = ucwords(strtolower(trim($validatedData['first_name'])));
-        $middleName = $validatedData['middle_name'] ? ucwords(strtolower(trim($validatedData['middle_name']))) : null;
         $lastName   = ucwords(strtolower(trim($validatedData['last_name'])));
 
+        // Check if this student ID exists with a DIFFERENT name (excluding current student)
+        $existingWithDifferentName = Student::where('student_id', $validatedData['student_id'])
+            ->where('id', '!=', $id)
+            ->where(function ($query) use ($firstName, $lastName) {
+                $query->where('first_name', '!=', $firstName)
+                      ->orWhere('last_name', '!=', $lastName);
+            })
+            ->exists();
+        
+        if ($existingWithDifferentName) {
+            // Get the existing student's name for the error message
+            $existing = Student::where('student_id', $validatedData['student_id'])
+                ->where('id', '!=', $id)
+                ->first();
+            return redirect()->back()->withInput()->withErrors([
+                'student_id' => 'Student ID ' . $validatedData['student_id'] . ' is already registered with name "' . $existing->first_name . ' ' . $existing->last_name . '". Cannot change this student to a different name.',
+            ]);
+        }
+
+        $middleName = $validatedData['middle_name'] ? ucwords(strtolower(trim($validatedData['middle_name']))) : null;
         $fullName = trim($firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName);
 
         // Update the student

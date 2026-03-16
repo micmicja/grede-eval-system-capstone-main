@@ -67,9 +67,13 @@ class EvalutionCommentController extends Controller
         $evaluations = $query->latest()->paginate(15)->withQueryString();
 
         // Get risk-based observations (High Risk and Mid High Risk students)
-        $riskObservationsQuery = StudentObservation::with(['student', 'teacher'])
-            ->where('referred_to_councilor', true)
+        $riskObservationsQuery = StudentObservation::where('referred_to_councilor', true)
             ->whereIn('risk_status', ['High Risk', 'Mid High Risk']);
+
+        // Only exclude resolved by default if no specific status filter is applied
+        if (!$request->filled('status')) {
+            $riskObservationsQuery->where('counseling_status', '!=', 'resolved');
+        }
 
         // Apply filters to risk observations
         if ($request->filled('q')) {
@@ -92,7 +96,18 @@ class EvalutionCommentController extends Controller
             $riskObservationsQuery->where('counseling_status', $request->query('status'));
         }
 
-        $riskObservations = $riskObservationsQuery->latest()->get();
+        // Add risk level filter (High and Mid High)
+        if ($request->filled('risk_level')) {
+            $riskObservationsQuery->where('risk_status', $request->query('risk_level'));
+        }
+
+        $riskObservations = $riskObservationsQuery
+            ->join('students', 'student_observations.student_id', '=', 'students.id')
+            ->orderBy('students.first_name', 'asc')
+            ->orderBy('students.last_name', 'asc')
+            ->select('student_observations.*')
+            ->with(['student', 'teacher'])
+            ->get();
 
         // Get teachers with count of their active observations (exclude resolved)
         $instructors = User::where('role', 'teacher')
@@ -313,8 +328,13 @@ class EvalutionCommentController extends Controller
         $evaluations = $query->latest()->get();
         
         // Build query for risk observations
-        $riskObservationsQuery = StudentObservation::with(['student', 'teacher'])
-            ->where('referred_to_councilor', true);
+        $riskObservationsQuery = StudentObservation::where('referred_to_councilor', true)
+            ->whereIn('risk_status', ['High Risk', 'Mid High Risk']);
+
+        // Only exclude resolved by default if no specific status filter is applied
+        if (!$request->filled('status')) {
+            $riskObservationsQuery->where('counseling_status', '!=', 'resolved');
+        }
         
         if ($request->filled('q')) {
             $q = $request->query('q');
@@ -335,24 +355,66 @@ class EvalutionCommentController extends Controller
         if ($request->filled('status')) {
             $riskObservationsQuery->where('counseling_status', $request->query('status'));
         }
+
+        // Add risk level filter (High and Mid High)
+        if ($request->filled('risk_level')) {
+            $riskObservationsQuery->where('risk_status', $request->query('risk_level'));
+        }
         
-        $riskObservations = $riskObservationsQuery->latest()->get();
+        // Order alphabetically by student name
+        $riskObservations = $riskObservationsQuery
+            ->join('students', 'student_observations.student_id', '=', 'students.id')
+            ->orderBy('students.first_name', 'asc')
+            ->orderBy('students.last_name', 'asc')
+            ->select('student_observations.*')
+            ->with(['student', 'teacher'])
+            ->get();
+        
+        // Order evaluations alphabetically
+        $evaluations = collect($evaluations)->sortBy(function ($eval) {
+            return $eval->student ? ($eval->student->first_name . ' ' . $eval->student->last_name) : '';
+        });
+        
+        // Merge both collections and sort together by student name
+        $mergedReferrals = collect();
+        
+        // Add risk observations with type indicator
+        foreach ($riskObservations as $obs) {
+            $obs->referral_type = 'risk_assessment';
+            $mergedReferrals->push($obs);
+        }
+        
+        // Add evaluations with type indicator
+        foreach ($evaluations as $eval) {
+            $eval->referral_type = 'evaluation';
+            $mergedReferrals->push($eval);
+        }
+        
+        // Sort merged collection alphabetically by student name
+        $mergedReferrals = $mergedReferrals->sortBy(function ($item) {
+            $studentName = '';
+            if ($item->referral_type === 'risk_assessment' && $item->student) {
+                $studentName = $item->student->first_name . ' ' . $item->student->last_name;
+            } elseif ($item->referral_type === 'evaluation' && $item->student) {
+                $studentName = $item->student->first_name . ' ' . $item->student->last_name;
+            }
+            return strtolower($studentName);
+        });
         
         $format = $request->input('format', 'pdf');
         $filename = 'counseling-referrals-' . Carbon::now()->format('Y-m-d');
         
         if ($format === 'excel') {
-            return $this->generateReferralsCSV($evaluations, $riskObservations, $filename);
+            return $this->generateReferralsCSV($mergedReferrals, $filename);
         }
         
         if ($format === 'word') {
-            return $this->generateReferralsWord($evaluations, $riskObservations, $counselor, $filename);
+            return $this->generateReferralsWord($mergedReferrals, $counselor, $filename);
         }
         
         // Default to PDF
         $pdf = Pdf::loadView('exports.counseling-referrals', [
-            'evaluations' => $evaluations,
-            'riskObservations' => $riskObservations,
+            'referrals' => $mergedReferrals,
             'counselor' => $counselor,
             'date' => Carbon::now()->format('F d, Y'),
             'filters' => [
@@ -368,14 +430,14 @@ class EvalutionCommentController extends Controller
     /**
      * Generate CSV for counseling referrals
      */
-    private function generateReferralsCSV($evaluations, $riskObservations, $filename)
+    private function generateReferralsCSV($referrals, $filename)
     {
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
         ];
         
-        $callback = function() use ($evaluations, $riskObservations) {
+        $callback = function() use ($referrals) {
             $file = fopen('php://output', 'w');
             
             fputcsv($file, ['COUNSELING REFERRALS']);
@@ -386,39 +448,38 @@ class EvalutionCommentController extends Controller
             
             $index = 1;
             
-            // Export risk observations
-            foreach ($riskObservations as $obs) {
-                $behaviors = is_array($obs->observed_behaviors) 
-                    ? $obs->observed_behaviors 
-                    : json_decode($obs->observed_behaviors, true) ?? [];
-                $behaviorText = count($behaviors) > 0 ? implode('; ', $behaviors) : 'Risk Assessment';
-                
-                fputcsv($file, [
-                    $index++,
-                    'Risk Assessment',
-                    $obs->student->full_name ?? 'N/A',
-                    $obs->student->section ?? 'N/A',
-                    $obs->student->subject ?? 'N/A',
-                    $obs->teacher->full_name ?? 'N/A',
-                    $obs->risk_status . ' - ' . $behaviorText,
-                    ucfirst($obs->counseling_status ?? 'pending'),
-                    $obs->scheduled_at ? $obs->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled'
-                ]);
-            }
-            
-            // Export regular evaluations
-            foreach ($evaluations as $eval) {
-                fputcsv($file, [
-                    $index++,
-                    'Referral',
-                    $eval->student->full_name ?? 'N/A',
-                    $eval->student->section ?? 'N/A',
-                    $eval->student->subject ?? 'N/A',
-                    $eval->teacher->full_name ?? 'N/A',
-                    $eval->comments ?? 'N/A',
-                    ucfirst($eval->status ?? 'pending'),
-                    $eval->scheduled_at ? $eval->scheduled_at->format('M d, Y h:i A') : 'Not Set'
-                ]);
+            // Export all referrals in merged, sorted order
+            foreach ($referrals as $item) {
+                if ($item->referral_type === 'risk_assessment') {
+                    $behaviors = is_array($item->observed_behaviors) 
+                        ? $item->observed_behaviors 
+                        : json_decode($item->observed_behaviors, true) ?? [];
+                    $behaviorText = count($behaviors) > 0 ? implode('; ', $behaviors) : 'Risk Assessment';
+                    
+                    fputcsv($file, [
+                        $index++,
+                        'Risk Assessment',
+                        $item->student->full_name ?? 'N/A',
+                        $item->student->section ?? 'N/A',
+                        $item->student->subject ?? 'N/A',
+                        $item->teacher->full_name ?? 'N/A',
+                        $item->risk_status . ' - ' . $behaviorText,
+                        ucfirst($item->counseling_status ?? 'pending'),
+                        $item->scheduled_at ? $item->scheduled_at->format('M d, Y h:i A') : 'Not Scheduled'
+                    ]);
+                } else {
+                    fputcsv($file, [
+                        $index++,
+                        'Referral',
+                        $item->student->full_name ?? 'N/A',
+                        $item->student->section ?? 'N/A',
+                        $item->student->subject ?? 'N/A',
+                        $item->teacher->full_name ?? 'N/A',
+                        $item->comments ?? 'N/A',
+                        ucfirst($item->status ?? 'pending'),
+                        $item->scheduled_at ? $item->scheduled_at->format('M d, Y h:i A') : 'Not Set'
+                    ]);
+                }
             }
             
             fclose($file);
@@ -430,7 +491,7 @@ class EvalutionCommentController extends Controller
     /**
      * Generate Word document for counseling referrals
      */
-    private function generateReferralsWord($evaluations, $riskObservations, $counselor, $filename)
+    private function generateReferralsWord($referrals, $counselor, $filename)
     {
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
@@ -454,7 +515,7 @@ class EvalutionCommentController extends Controller
         $section->addTextBreak(1);
         
         $section->addText(
-            'Total Referrals: ' . ($riskObservations->count() + $evaluations->count()),
+            'Total Referrals: ' . $referrals->count(),
             ['bold' => true, 'size' => 11, 'color' => '1a237e']
         );
         $section->addTextBreak(1);
@@ -478,37 +539,33 @@ class EvalutionCommentController extends Controller
         
         $index = 1;
         
-        // Add risk observations
-        foreach ($riskObservations as $obs) {
-            $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
-            $behaviors = is_array($obs->observed_behaviors) 
-                ? $obs->observed_behaviors 
-                : json_decode($obs->observed_behaviors, true) ?? [];
-            $behaviorText = count($behaviors) > 0 ? implode(', ', array_slice($behaviors, 0, 2)) : 'Risk Assessment';
-            if(count($behaviors) > 2) $behaviorText .= '...';
-            
-            $table->addRow();
-            $table->addCell(800, ['bgColor' => $bgColor])->addText((string)$index++);
-            $table->addCell(1500, ['bgColor' => $bgColor])->addText('Risk Assessment');
-            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($obs->student->full_name ?? 'N/A'));
-            $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($obs->student->subject ?? 'N/A'));
-            $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($obs->teacher->full_name ?? 'N/A'));
-            $table->addCell(2500, ['bgColor' => $bgColor])->addText($obs->risk_status);
-            $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($obs->counseling_status ?? 'pending'));
-        }
-        
-        // Add regular evaluations
-        foreach ($evaluations as $eval) {
+        // Add all referrals in merged, sorted order
+        foreach ($referrals as $item) {
             $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
             
             $table->addRow();
             $table->addCell(800, ['bgColor' => $bgColor])->addText((string)$index++);
-            $table->addCell(1500, ['bgColor' => $bgColor])->addText('Referral');
-            $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($eval->student->full_name ?? 'N/A'));
-            $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($eval->student->subject ?? 'N/A'));
-            $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($eval->teacher->full_name ?? 'N/A'));
-            $table->addCell(2500, ['bgColor' => $bgColor])->addText(substr($eval->comments ?? 'N/A', 0, 50) . '...');
-            $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($eval->status ?? 'pending'));
+            
+            if ($item->referral_type === 'risk_assessment') {
+                $behaviors = is_array($item->observed_behaviors) 
+                    ? $item->observed_behaviors 
+                    : json_decode($item->observed_behaviors, true) ?? [];
+                $reasonText = $item->risk_status;
+                
+                $table->addCell(1500, ['bgColor' => $bgColor])->addText('Risk Assessment');
+                $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($item->student->full_name ?? 'N/A'));
+                $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($item->student->subject ?? 'N/A'));
+                $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($item->teacher->full_name ?? 'N/A'));
+                $table->addCell(2500, ['bgColor' => $bgColor])->addText($reasonText);
+                $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($item->counseling_status ?? 'pending'));
+            } else {
+                $table->addCell(1500, ['bgColor' => $bgColor])->addText('Referral');
+                $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($item->student->full_name ?? 'N/A'));
+                $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($item->student->subject ?? 'N/A'));
+                $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($item->teacher->full_name ?? 'N/A'));
+                $table->addCell(2500, ['bgColor' => $bgColor])->addText(substr($item->comments ?? 'N/A', 0, 50));
+                $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($item->status ?? 'pending'));
+            }
         }
         
         $section->addTextBreak(2);
