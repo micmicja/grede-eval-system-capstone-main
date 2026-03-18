@@ -186,7 +186,7 @@
                         <strong>Referral</strong>
                     @endif
                 </td>
-                <td>{{ $item->student->full_name ?? 'N/A' }}</td>
+                <td>{{ $item->student->last_name }} {{ $item->student->first_name }} {{ $item->student->middle_name }}</td>
                 <td>{{ $item->student->section ?? 'N/A' }}</td>
                 <td>{{ $item->student->subject ?? 'N/A' }}</td>
                 <td>{{ $item->teacher->full_name ?? 'N/A' }}</td>

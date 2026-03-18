@@ -183,7 +183,7 @@
                                     @foreach($riskObservations as $observation)
                                     <tr class="table-warning">
                                         <td class="ps-4">
-                                            <div class="fw-bold text-dark">{{ $observation->student->full_name }}</div>
+                                            <div class="fw-bold text-dark">{{ $observation->student->last_name }} {{ $observation->student->first_name }} {{ $observation->student->middle_name }}</div>
                                             <div class="small text-muted text-lowercase">{{ $observation->student->section }}</div>
                                         </td>
                                         <td><span class="small fw-medium">{{ $observation->teacher->full_name }}</span></td>
@@ -256,7 +256,7 @@
                                                 <div class="modal-body py-0">
                                                     <div class="mb-3">
                                                         <p class="small text-muted mb-1">Student:</p>
-                                                        <p class="fw-bold mb-0">{{ $observation->student->full_name }}</p>
+                                                        <p class="fw-bold mb-0">{{ $observation->student->last_name }} {{ $observation->student->first_name }} {{ $observation->student->middle_name }}</p>
                                                     </div>
                                                     <div class="mb-3">
                                                         <p class="small text-muted mb-1">Section:</p>

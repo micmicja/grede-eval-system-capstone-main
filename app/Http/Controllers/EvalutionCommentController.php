@@ -103,8 +103,8 @@ class EvalutionCommentController extends Controller
 
         $riskObservations = $riskObservationsQuery
             ->join('students', 'student_observations.student_id', '=', 'students.id')
-            ->orderBy('students.first_name', 'asc')
             ->orderBy('students.last_name', 'asc')
+            ->orderBy('students.first_name', 'asc')
             ->select('student_observations.*')
             ->with(['student', 'teacher'])
             ->get();
@@ -361,18 +361,18 @@ class EvalutionCommentController extends Controller
             $riskObservationsQuery->where('risk_status', $request->query('risk_level'));
         }
         
-        // Order alphabetically by student name
+        // Order alphabetically by student last name
         $riskObservations = $riskObservationsQuery
             ->join('students', 'student_observations.student_id', '=', 'students.id')
-            ->orderBy('students.first_name', 'asc')
             ->orderBy('students.last_name', 'asc')
+            ->orderBy('students.first_name', 'asc')
             ->select('student_observations.*')
             ->with(['student', 'teacher'])
             ->get();
         
-        // Order evaluations alphabetically
+        // Order evaluations alphabetically by last name
         $evaluations = collect($evaluations)->sortBy(function ($eval) {
-            return $eval->student ? ($eval->student->first_name . ' ' . $eval->student->last_name) : '';
+            return $eval->student ? ($eval->student->last_name . ' ' . $eval->student->first_name) : '';
         });
         
         // Merge both collections and sort together by student name
@@ -390,13 +390,13 @@ class EvalutionCommentController extends Controller
             $mergedReferrals->push($eval);
         }
         
-        // Sort merged collection alphabetically by student name
+        // Sort merged collection alphabetically by student last name
         $mergedReferrals = $mergedReferrals->sortBy(function ($item) {
             $studentName = '';
             if ($item->referral_type === 'risk_assessment' && $item->student) {
-                $studentName = $item->student->first_name . ' ' . $item->student->last_name;
+                $studentName = $item->student->last_name . ' ' . $item->student->first_name;
             } elseif ($item->referral_type === 'evaluation' && $item->student) {
-                $studentName = $item->student->first_name . ' ' . $item->student->last_name;
+                $studentName = $item->student->last_name . ' ' . $item->student->first_name;
             }
             return strtolower($studentName);
         });
@@ -459,7 +459,7 @@ class EvalutionCommentController extends Controller
                     fputcsv($file, [
                         $index++,
                         'Risk Assessment',
-                        $item->student->full_name ?? 'N/A',
+                        trim(($item->student->last_name ?? 'N/A') . ' ' . ($item->student->first_name ?? 'N/A') . ' ' . ($item->student->middle_name ?? '')),
                         $item->student->section ?? 'N/A',
                         $item->student->subject ?? 'N/A',
                         $item->teacher->full_name ?? 'N/A',
@@ -471,7 +471,7 @@ class EvalutionCommentController extends Controller
                     fputcsv($file, [
                         $index++,
                         'Referral',
-                        $item->student->full_name ?? 'N/A',
+                        trim(($item->student->last_name ?? 'N/A') . ' ' . ($item->student->first_name ?? 'N/A') . ' ' . ($item->student->middle_name ?? '')),
                         $item->student->section ?? 'N/A',
                         $item->student->subject ?? 'N/A',
                         $item->teacher->full_name ?? 'N/A',
@@ -553,14 +553,16 @@ class EvalutionCommentController extends Controller
                 $reasonText = $item->risk_status;
                 
                 $table->addCell(1500, ['bgColor' => $bgColor])->addText('Risk Assessment');
-                $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($item->student->full_name ?? 'N/A'));
+                $studentName = trim(($item->student->last_name ?? 'N/A') . ' ' . ($item->student->first_name ?? 'N/A') . ' ' . ($item->student->middle_name ?? ''));
+                $table->addCell(2500, ['bgColor' => $bgColor])->addText($studentName);
                 $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($item->student->subject ?? 'N/A'));
                 $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($item->teacher->full_name ?? 'N/A'));
                 $table->addCell(2500, ['bgColor' => $bgColor])->addText($reasonText);
                 $table->addCell(1500, ['bgColor' => $bgColor])->addText(ucfirst($item->counseling_status ?? 'pending'));
             } else {
                 $table->addCell(1500, ['bgColor' => $bgColor])->addText('Referral');
-                $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($item->student->full_name ?? 'N/A'));
+                $studentName = trim(($item->student->last_name ?? 'N/A') . ' ' . ($item->student->first_name ?? 'N/A') . ' ' . ($item->student->middle_name ?? ''));
+                $table->addCell(2500, ['bgColor' => $bgColor])->addText($studentName);
                 $table->addCell(1800, ['bgColor' => $bgColor])->addText((string)($item->student->subject ?? 'N/A'));
                 $table->addCell(2000, ['bgColor' => $bgColor])->addText((string)($item->teacher->full_name ?? 'N/A'));
                 $table->addCell(2500, ['bgColor' => $bgColor])->addText(substr($item->comments ?? 'N/A', 0, 50));
