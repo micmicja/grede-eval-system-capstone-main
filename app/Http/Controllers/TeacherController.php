@@ -229,9 +229,8 @@ class TeacherController extends Controller
         $firstName  = ucwords(strtolower(trim($validatedData['first_name'])));
         $lastName   = ucwords(strtolower(trim($validatedData['last_name'])));
 
-        // Check if this student ID exists with a DIFFERENT name (for the SAME teacher only)
+        // Check globally if this student ID exists with a DIFFERENT name (blocked everywhere)
         $existingWithDifferentName = Student::where('student_id', $validatedData['student_id'])
-            ->where('teacher_id', $teacherId)
             ->where(function ($query) use ($firstName, $lastName) {
                 $query->where('first_name', '!=', $firstName)
                       ->orWhere('last_name', '!=', $lastName);
@@ -240,15 +239,13 @@ class TeacherController extends Controller
         
         if ($existingWithDifferentName) {
             // Get the existing student's name for the error message
-            $existing = Student::where('student_id', $validatedData['student_id'])
-                ->where('teacher_id', $teacherId)
-                ->first();
+            $existing = Student::where('student_id', $validatedData['student_id'])->first();
             return redirect()->back()->withInput()->withErrors([
-                'student_id' => 'Student ID ' . $validatedData['student_id'] . ' is already registered with name "' . $existing->first_name . ' ' . $existing->last_name . '" for your class. Please use a different Student ID or update the existing record.',
+                'student_id' => 'Student ID ' . $validatedData['student_id'] . ' is already registered with name "' . $existing->first_name . ' ' . $existing->last_name . '". To add this same ID with a different name, contact administration.',
             ]);
         }
 
-        // Check if exact same student already exists (for the SAME teacher only)
+        // Check if exact same student already exists in the SAME teacher's class
         $exactMatch = Student::where('student_id', $validatedData['student_id'])
             ->where('teacher_id', $teacherId)
             ->where('first_name', $firstName)
