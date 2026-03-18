@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Student Report - {{ $student->full_name }}</title>
+    <title>Student Report - {{ $student->last_name }} {{ $student->first_name }} {{ $student->middle_name }}</title>
     <style>
         @page {
             margin: 15mm;
@@ -227,7 +227,7 @@
     </div>
 
     <div class="info-box">
-        <p><strong>Student Name:</strong> {{ $student->full_name }}</p>
+        <p><strong>Student Name:</strong> {{ $student->last_name }} {{ $student->first_name }} {{ $student->middle_name }}</p>
         <p><strong>Student ID:</strong> {{ $student->student_id ?? 'N/A' }}</p>
         <p><strong>Section/Course:</strong> {{ $student->section }}</p>
         <p><strong>Subject:</strong> {{ $student->subject }}</p>

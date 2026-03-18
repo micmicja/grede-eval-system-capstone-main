@@ -3,7 +3,7 @@
         <div class="row mb-4">
             <div class="col-md-8">
                 <h2>Attendance Report</h2>
-                <p class="text-muted">Student: <strong>{{ $student->full_name }}</strong></p>
+                <p class="text-muted">Student: <strong>{{ $student->last_name }} {{ $student->first_name }} {{ $student->middle_name }}</strong></p>
             </div>
             <div class="col-md-4 text-end">
                 <a href="{{ route('Dashboard.teacher') }}" class="btn btn-outline-secondary">Back to Dashboard</a>

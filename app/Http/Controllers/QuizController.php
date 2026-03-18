@@ -53,11 +53,15 @@ class QuizController extends Controller
         $totalItems = (int) $validated['total_items'];
         $percentage = $totalItems > 0 ? round(($rawScore / $totalItems) * 100, 1) : 0;
 
+        // Format student name as "LastName FirstName MiddleName"
+        $formattedName = trim(($student->last_name ?? 'N/A') . ' ' . ($student->first_name ?? 'N/A') . ' ' . ($student->middle_name ?? ''));
+
         // Create quiz record (store percentage in score column)
         Quiz_exam_activity::create([
-            'full_name' => $validated['full_name'],
+            'full_name' => $formattedName,
             'subject' => $student->subject,
             'section' => $student->section,
+            'student_id' => $student->id,
             'user_id' => $teacher->id,
             'activity_type' => 'Quiz',
             'activity_title' => $validated['activity_title'],

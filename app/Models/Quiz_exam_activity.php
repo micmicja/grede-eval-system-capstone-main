@@ -13,6 +13,7 @@ class Quiz_exam_activity extends Model
         'subject',
         'section',
         'user_id',
+        'student_id',
         'activity_type',
         'activity_title',
         'date_taken',
@@ -27,4 +28,11 @@ class Quiz_exam_activity extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Relationship to Student
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
+
 }
+

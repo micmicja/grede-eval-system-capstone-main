@@ -24,7 +24,10 @@ class ExportController extends Controller
         $teacherId = Auth::id();
         $teacher = Auth::user();
         
-        $students = Student::where('teacher_id', $teacherId)->get();
+        $students = Student::where('teacher_id', $teacherId)
+            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'asc')
+            ->get();
         
         // Get teacher settings
         $settings = TeacherSetting::where('user_id', $teacherId)->first();
@@ -303,7 +306,8 @@ class ExportController extends Controller
         $activityTitle = $request->input('title');
         $dateTaken = $request->input('date');
         
-        $results = Quiz_exam_activity::where('user_id', $teacherId)
+        $results = Quiz_exam_activity::with('student')
+            ->where('user_id', $teacherId)
             ->where('activity_type', $activityType)
             ->where('activity_title', $activityTitle)
             ->where('date_taken', $dateTaken)
@@ -362,7 +366,7 @@ class ExportController extends Controller
                 fputcsv($file, [
                     $index + 1,
                     $student->student_id ?? 'N/A',
-                    $student->full_name,
+                    trim(($student->last_name ?? 'N/A') . ' ' . ($student->first_name ?? 'N/A') . ' ' . ($student->middle_name ?? '')),
                     $student->section,
                     $student->subject ?? 'N/A',
                     $student->risk_status ?? 'N/A'
@@ -520,10 +524,16 @@ class ExportController extends Controller
                 $passingScore = $totalScore * 0.75;
                 $status = $result->score >= $passingScore ? 'Passed' : 'Failed';
                 
+                // Format student name from relationship or fallback to full_name
+                $studentName = $result->full_name;
+                if ($result->student) {
+                    $studentName = trim(($result->student->last_name ?? '') . ' ' . ($result->student->first_name ?? '') . ' ' . ($result->student->middle_name ?? ''));
+                }
+                
                 fputcsv($file, [
                     $index + 1,
                     $result->student_id ?? 'N/A',
-                    $result->full_name,
+                    $studentName,
                     $result->score,
                     $result->total_score,
                     $status
@@ -622,7 +632,8 @@ class ExportController extends Controller
             $table->addRow();
             $table->addCell(1000, ['bgColor' => $bgColor])->addText((string)($index + 1));
             $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($student->student_id ?? 'N/A'));
-            $table->addCell(3500, ['bgColor' => $bgColor])->addText((string)($student->full_name ?? 'N/A'));
+            $studentName = trim(($student->last_name ?? 'N/A') . ' ' . ($student->first_name ?? 'N/A') . ' ' . ($student->middle_name ?? ''));
+            $table->addCell(3500, ['bgColor' => $bgColor])->addText($studentName);
             $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($student->section ?? 'N/A'));
             $table->addCell(2500, ['bgColor' => $bgColor])->addText((string)($student->risk_status ?? 'N/A'), ['bold' => true, 'color' => $riskColor]);
         }
@@ -1020,10 +1031,16 @@ class ExportController extends Controller
             $statusColor = $status === 'Passed' ? '28a745' : 'dc3545';
             $bgColor = ($index % 2 == 0) ? 'FFFFFF' : 'f9fafb';
             
+            // Format student name from relationship or fallback to full_name
+            $studentName = $result->full_name;
+            if ($result->student) {
+                $studentName = trim(($result->student->last_name ?? '') . ' ' . ($result->student->first_name ?? '') . ' ' . ($result->student->middle_name ?? ''));
+            }
+            
             $resultsTable->addRow();
             $resultsTable->addCell(1500, ['bgColor' => $bgColor])->addText((string)($index + 1));
             $resultsTable->addCell(2500, ['bgColor' => $bgColor])->addText((string)($result->student_id ?? 'N/A'));
-            $resultsTable->addCell(3500, ['bgColor' => $bgColor])->addText((string)($result->full_name ?? 'N/A'));
+            $resultsTable->addCell(3500, ['bgColor' => $bgColor])->addText((string)$studentName);
             $resultsTable->addCell(2000, ['bgColor' => $bgColor])->addText((string)$result->score);
             $resultsTable->addCell(2000, ['bgColor' => $bgColor])->addText((string)$result->total_score);
             $resultsTable->addCell(2000, ['bgColor' => $bgColor])->addText((string)$status, ['bold' => true, 'color' => $statusColor]);

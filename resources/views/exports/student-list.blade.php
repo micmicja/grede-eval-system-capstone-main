@@ -151,7 +151,7 @@
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $student->student_id ?? 'N/A' }}</td>
-                <td>{{ $student->full_name }}</td>
+                <td>{{ $student->last_name }} {{ $student->first_name }} {{ $student->middle_name }}</td>
                 <td>{{ $student->section }}</td>
                 <td>{{ $student->subject }}</td>
                 <td style="font-weight: bold; color: {{ 

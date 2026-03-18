@@ -52,10 +52,14 @@ class ActivityController extends Controller
             $percentage = min(100, max(0, (float) $validated['score']));
         }
 
+        // Format student name as "LastName FirstName MiddleName"
+        $formattedName = trim(($student->last_name ?? 'N/A') . ' ' . ($student->first_name ?? 'N/A') . ' ' . ($student->middle_name ?? ''));
+
         Quiz_exam_activity::create([
-            'full_name' => $validated['full_name'],
+            'full_name' => $formattedName,
             'subject' => $student->subject,
             'section' => $student->section,
+            'student_id' => $student->id,
             'user_id' => $teacher->id,
             'activity_type' => 'Activity',
             'activity_title' => $validated['activity_title'],

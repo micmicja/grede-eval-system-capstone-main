@@ -232,7 +232,13 @@
             @foreach($results->sortByDesc('score') as $index => $result)
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td>{{ $result->full_name }}</td>
+                <td>
+                    @if($result->student)
+                        {{ $result->student->last_name }} {{ $result->student->first_name }} {{ $result->student->middle_name }}
+                    @else
+                        {{ $result->full_name }}
+                    @endif
+                </td>
                 <td>{{ $result->score }}</td>
                 <td>{{ $totalScore }}</td>
                 <td>{{ $totalScore > 0 ? number_format(($result->score / $totalScore) * 100, 2) : '0.00' }}%</td>

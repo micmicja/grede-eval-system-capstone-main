@@ -64,11 +64,15 @@ class ProjectController extends Controller
         $weightedProjectScore = round(($percentage * $projectWeight) / 100, 2);
 
 
+        // Format student name as "LastName FirstName MiddleName"
+        $formattedName = trim(($student->last_name ?? 'N/A') . ' ' . ($student->first_name ?? 'N/A') . ' ' . ($student->middle_name ?? ''));
+
         // 🔹 Save project record
         Quiz_exam_activity::create([
-            'full_name' => $validated['full_name'],
+            'full_name' => $formattedName,
             'subject' => $student->subject,
             'section' => $student->section,
+            'student_id' => $student->id,
             'user_id' => $teacher->id,
             'activity_type' => 'project',
             'activity_title' => $validated['activity_title'],

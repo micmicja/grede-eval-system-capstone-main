@@ -6,7 +6,7 @@
             <div class="col-md-8">
                 <h2 class="fw-bold">Student Performance Report</h2>
                 <p class="text-muted mb-0">
-                    <strong>Name:</strong> {{ $student->full_name }} | 
+                    <strong>Name:</strong> {{ $student->last_name }} {{ $student->first_name }} {{ $student->middle_name }} | 
                     <strong>Section:</strong> {{ $student->section }} | 
                     <strong>Subject:</strong> {{ $student->subject }}
                 </p>
