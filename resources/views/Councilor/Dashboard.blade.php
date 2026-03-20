@@ -147,13 +147,6 @@
                                         @endforeach
                                     </select>
 
-                                    <select name="status" class="form-select form-select-sm rounded-pill" style="width: 150px;">
-                                        <option value="">Any Status</option>
-                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="ongoing" {{ request('status') == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                                        <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-                                    </select>
-
                                     <select name="risk_level" class="form-select form-select-sm rounded-pill" style="width: 150px;">
                                         <option value="">All Risk Levels</option>
                                         <option value="High Risk" {{ request('risk_level') == 'High Risk' ? 'selected' : '' }}>🔴 High Risk</option>

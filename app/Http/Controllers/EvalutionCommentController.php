@@ -40,11 +40,6 @@ class EvalutionCommentController extends Controller
             $query->where('teacher_id', $request->query('teacher_id'));
         }
 
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
-        }
-
         // Filter by urgency (low|mid|high)
         if ($request->filled('urgency')) {
             $query->where('urgency', $request->query('urgency'));
@@ -70,11 +65,6 @@ class EvalutionCommentController extends Controller
         $riskObservationsQuery = StudentObservation::where('referred_to_councilor', true)
             ->whereIn('risk_status', ['High Risk', 'Mid High Risk']);
 
-        // Only exclude resolved by default if no specific status filter is applied
-        if (!$request->filled('status')) {
-            $riskObservationsQuery->where('counseling_status', '!=', 'resolved');
-        }
-
         // Apply filters to risk observations
         if ($request->filled('q')) {
             $q = $request->query('q');
@@ -90,10 +80,6 @@ class EvalutionCommentController extends Controller
 
         if ($request->filled('teacher_id')) {
             $riskObservationsQuery->where('teacher_id', $request->query('teacher_id'));
-        }
-
-        if ($request->filled('status')) {
-            $riskObservationsQuery->where('counseling_status', $request->query('status'));
         }
 
         // Add risk level filter (High and Mid High)
@@ -112,8 +98,7 @@ class EvalutionCommentController extends Controller
         // Get teachers with count of their active observations (exclude resolved)
         $instructors = User::where('role', 'teacher')
             ->withCount(['observations' => function ($query) {
-                $query->where('referred_to_councilor', true)
-                      ->where('counseling_status', '!=', 'resolved');
+                $query->where('referred_to_councilor', true);
             }])
             ->get()
             ->map(function ($teacher) {
@@ -320,21 +305,12 @@ class EvalutionCommentController extends Controller
         if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->query('teacher_id'));
         }
-        
-        if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
-        }
-        
+
         $evaluations = $query->latest()->get();
         
         // Build query for risk observations
         $riskObservationsQuery = StudentObservation::where('referred_to_councilor', true)
             ->whereIn('risk_status', ['High Risk', 'Mid High Risk']);
-
-        // Only exclude resolved by default if no specific status filter is applied
-        if (!$request->filled('status')) {
-            $riskObservationsQuery->where('counseling_status', '!=', 'resolved');
-        }
         
         if ($request->filled('q')) {
             $q = $request->query('q');
@@ -350,10 +326,6 @@ class EvalutionCommentController extends Controller
         
         if ($request->filled('teacher_id')) {
             $riskObservationsQuery->where('teacher_id', $request->query('teacher_id'));
-        }
-        
-        if ($request->filled('status')) {
-            $riskObservationsQuery->where('counseling_status', $request->query('status'));
         }
 
         // Add risk level filter (High and Mid High)
@@ -419,8 +391,7 @@ class EvalutionCommentController extends Controller
             'date' => Carbon::now()->format('F d, Y'),
             'filters' => [
                 'search' => $request->input('q'),
-                'teacher' => $request->input('teacher_id'),
-                'status' => $request->input('status')
+                'teacher' => $request->input('teacher_id')
             ]
         ]);
         

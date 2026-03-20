@@ -110,8 +110,8 @@
                                             value="{{ request('search_name') }}">
                                     </div>
                                     <div class="flex-grow-1">
-                                        <input type="text" name="search_section" class="form-control" placeholder="Search by section..."
-                                            value="{{ request('search_section') }}">
+                                        <input type="text" name="search_department" class="form-control" placeholder="Search by department..."
+                                            value="{{ request('search_department') }}">
                                     </div>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-search"></i> Search
@@ -130,7 +130,7 @@
                                         <th>#</th>
                                         <th>Full Name</th>
                                         <th>Username</th>
-                                        <th>Section</th>
+                                        <th>Department</th>
                                         <th>Subject</th>
                                         <th>Actions</th>
                                     </tr>
@@ -144,7 +144,7 @@
                                                 <td>{{ $index + 1}}</td>
                                                 <td>{{ $teacher->full_name }}</td>
                                                 <td>{{ $teacher->username }}</td>
-                                                <td>{{ $teacher->section }}</td>
+                                                <td>{{ $teacher->department }}</td>
                                                 <td>{{ $teacher->subject }}</td>
                                                 <td>
                                                     <a href="{{ route('admin.teacher.edit', $teacher->id) }}" class="btn btn-warning btn-sm me-1">Edit</a>

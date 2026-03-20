@@ -69,8 +69,15 @@
                         <input type="text" class="form-control" name="fullname" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Course/Section</label>
-                        <input type="text" class="form-control" name="section" required>
+                        <label class="form-label">Department</label>
+                        <select class="form-control" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="BSCS">BSCS - Bachelor of Science in Computer Science</option>
+                            <option value="BAPS">BAPS - Bachelor of Arts in Political Science</option>
+                            <option value="BSBA">BSBA - Bachelor of Science in Business Administration</option>
+                            <option value="BEED">BEED - Bachelor of Elementary Education</option>
+                            <option value="BSED">BSED - Bachelor of Secondary Education</option>
+                        </select>
                     </div>
 
                     <div class="col-md-6">

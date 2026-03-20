@@ -22,9 +22,9 @@ class AdminController extends Controller
             $query->where('full_name', 'like', '%' . $request->search_name . '%');
         }
 
-        // Filter by section
-        if ($request->filled('search_section')) {
-            $query->where('section', 'like', '%' . $request->search_section . '%');
+        // Filter by department
+        if ($request->filled('search_department')) {
+            $query->where('department', 'like', '%' . $request->search_department . '%');
         }
 
         $teacher_list = $query->get();
@@ -47,7 +47,7 @@ class AdminController extends Controller
             'counselor_list' => $counselor_list,
             'countedCounselor' => $countedCounselor,
             'search_name' => $request->search_name,
-            'search_section' => $request->search_section,
+            'search_department' => $request->search_department,
             'search_counselor_name' => $request->search_counselor_name,
         ]);
     }
@@ -84,14 +84,14 @@ class AdminController extends Controller
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $teacher->id,
-            'section' => 'nullable|string|max:255',
+            'department' => 'nullable|string|max:255',
             'subject' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:8',
         ]);
 
         $teacher->full_name = $data['full_name'];
         $teacher->username = $data['username'];
-        $teacher->section = $data['section'] ?? $teacher->section;
+        $teacher->department = $data['department'] ?? $teacher->department;
         $teacher->subject = $data['subject'] ?? $teacher->subject;
 
         if (!empty($data['password'])) {

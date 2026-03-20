@@ -36,8 +36,15 @@
                         <input type="text" class="form-control" name="full_name" value="{{ old('full_name', $teacher->full_name) }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Section</label>
-                        <input type="text" class="form-control" name="section" value="{{ old('section', $teacher->section) }}">
+                        <label class="form-label">Department</label>
+                        <select class="form-control" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="BSCS" {{ old('department', $teacher->department) == 'BSCS' ? 'selected' : '' }}>BSCS - Bachelor of Science in Computer Science</option>
+                            <option value="BAPS" {{ old('department', $teacher->department) == 'BAPS' ? 'selected' : '' }}>BAPS - Bachelor of Arts in Political Science</option>
+                            <option value="BSBA" {{ old('department', $teacher->department) == 'BSBA' ? 'selected' : '' }}>BSBA - Bachelor of Science in Business Administration</option>
+                            <option value="BEED" {{ old('department', $teacher->department) == 'BEED' ? 'selected' : '' }}>BEED - Bachelor of Elementary Education</option>
+                            <option value="BSED" {{ old('department', $teacher->department) == 'BSED' ? 'selected' : '' }}>BSED - Bachelor of Secondary Education</option>
+                        </select>
                     </div>
 
                     <div class="col-md-6">
