@@ -19,6 +19,11 @@
             padding-bottom: 20px;
             border-bottom: 3px solid #1a237e;
         }
+        .letterhead .logo {
+            max-width: 140px;
+            height: auto;
+            margin-bottom: 15px;
+        }
         .letterhead .institution {
             font-size: 18pt;
             font-weight: bold;
@@ -121,6 +126,7 @@
 </head>
 <body>
     <div class="letterhead">
+        <img src="{{ public_path('img/logo.jpg') }}" alt="Logo" class="logo">
         <p class="institution">Grade Evaluation System</p>
         <p class="address">Academic Records and Assessment Department</p>
     </div>

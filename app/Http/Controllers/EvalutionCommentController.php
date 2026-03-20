@@ -496,6 +496,12 @@ class EvalutionCommentController extends Controller
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
+        // Letterhead with logo
+        $logoPath = public_path('img/logo.jpg');
+        if (file_exists($logoPath)) {
+            $section->addImage($logoPath, ['width' => 100, 'height' => 100, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+        }
+        
         // Header
         $section->addText(
             'COUNSELING REFERRALS',

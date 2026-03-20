@@ -19,6 +19,11 @@
             padding-bottom: 20px;
             border-bottom: 3px solid #1a237e;
         }
+        .letterhead .logo {
+            max-width: 140px;
+            height: auto;
+            margin-bottom: 15px;
+        }
         .letterhead .institution {
             font-size: 18pt;
             font-weight: bold;

@@ -554,7 +554,13 @@ class ExportController extends Controller
         // Add section
         $section = $phpWord->addSection();
         
-        // Letterhead
+        // Letterhead with logo
+        $logoPath = public_path('img/logo.jpg');
+        if (file_exists($logoPath)) {
+            $section->addImage($logoPath, ['width' => 100, 'height' => 100, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+        }
+        
+        // Institution name
         $section->addText(
             'GRADE EVALUATION SYSTEM',
             ['bold' => true, 'size' => 18, 'color' => '1a237e'],
@@ -663,7 +669,13 @@ class ExportController extends Controller
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
-        // Letterhead
+        // Letterhead with logo
+        $logoPath = public_path('img/logo.jpg');
+        if (file_exists($logoPath)) {
+            $section->addImage($logoPath, ['width' => 100, 'height' => 100, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+        }
+        
+        // Institution name
         $section->addText(
             'GRADE EVALUATION SYSTEM',
             ['bold' => true, 'size' => 18, 'color' => '1a237e'],
@@ -836,7 +848,13 @@ class ExportController extends Controller
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
-        // Letterhead
+        // Letterhead with logo
+        $logoPath = public_path('img/logo.jpg');
+        if (file_exists($logoPath)) {
+            $section->addImage($logoPath, ['width' => 100, 'height' => 100, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+        }
+        
+        // Institution name
         $section->addText(
             'GRADE EVALUATION SYSTEM',
             ['bold' => true, 'size' => 18, 'color' => '1a237e'],
@@ -926,7 +944,13 @@ class ExportController extends Controller
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
         
-        // Letterhead
+        // Letterhead with logo
+        $logoPath = public_path('img/logo.jpg');
+        if (file_exists($logoPath)) {
+            $section->addImage($logoPath, ['width' => 100, 'height' => 100, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+        }
+        
+        // Institution name
         $section->addText(
             'GRADE EVALUATION SYSTEM',
             ['bold' => true, 'size' => 18, 'color' => '1a237e'],
