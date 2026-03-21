@@ -148,7 +148,7 @@
     <div class="login-card">
         {{-- LOGO SECTION --}}
         <div class="brand-wrapper">
-            <img src="{{ asset('img/final2.png') }}" alt="System Logo" class="login-logo">
+            <img src="{{ asset('img/logo.jpg') }}" alt="System Logo" class="login-logo">
         </div>
 
         <div class="login-header text-center">
