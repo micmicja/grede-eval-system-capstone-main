@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Department;
+use App\Models\Major;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -41,11 +43,17 @@ class AdminController extends Controller
         $counselor_list = $counselorQuery->get();
         $countedCounselor = $counselor_list->count();
 
+        // Departments query
+        $departments = Department::orderBy('code')->get();
+        $countedDepartments = $departments->count();
+
         return view('Admin.Dashboard', [
             'teacher_list' => $teacher_list,
             'countedTeacher' => $countedTeacher,
             'counselor_list' => $counselor_list,
             'countedCounselor' => $countedCounselor,
+            'departments' => $departments,
+            'countedDepartments' => $countedDepartments,
             'search_name' => $request->search_name,
             'search_department' => $request->search_department,
             'search_counselor_name' => $request->search_counselor_name,
@@ -70,8 +78,10 @@ class AdminController extends Controller
     public function edit(string $id)
     {
         $teacher = User::where('role', 'teacher')->findOrFail($id);
+        $departments = Department::orderBy('code')->get();
+        $majors = Major::orderBy('name')->get();
 
-        return view('Admin.EditTeacher', compact('teacher'));
+        return view('Admin.EditTeacher', compact('teacher', 'departments', 'majors'));
     }
 
     /**
@@ -84,14 +94,16 @@ class AdminController extends Controller
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $teacher->id,
-            'department' => 'nullable|string|max:255',
+            'department_id' => 'nullable|exists:departments,id',
+            'major_id' => 'nullable|exists:majors,id',
             'subject' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:8',
         ]);
 
         $teacher->full_name = $data['full_name'];
         $teacher->username = $data['username'];
-        $teacher->department = $data['department'] ?? $teacher->department;
+        $teacher->department_id = $data['department_id'] ?? $teacher->department_id;
+        $teacher->major_id = $data['major_id'] ?? null;
         $teacher->subject = $data['subject'] ?? $teacher->subject;
 
         if (!empty($data['password'])) {
@@ -184,5 +196,132 @@ class AdminController extends Controller
         $counselor = User::where('role', 'councilor')->findOrFail($id);
         $counselor->delete();
         return redirect()->route('Dashboard.admin', ['tab' => 'counselors'])->with('success', 'Counselor deleted successfully.');
+    }
+
+    /**
+     * Show the form for creating a new department.
+     */
+    public function createDepartment()
+    {
+        return view('Admin.CreateDepartment');
+    }
+
+    /**
+     * Store a newly created department in storage.
+     */
+    public function storeDepartment(Request $request)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:10|unique:departments,code',
+            'name' => 'required|string|max:255',
+            'majors' => 'nullable|array',
+            'majors.*' => 'nullable|string|max:255',
+        ]);
+
+        $department = Department::create([
+            'code' => $data['code'],
+            'name' => $data['name'],
+        ]);
+
+        // Create majors if provided
+        if (!empty($data['majors'])) {
+            foreach ($data['majors'] as $majorName) {
+                if ($majorName) { // Skip empty values
+                    Major::create([
+                        'department_id' => $department->id,
+                        'name' => $majorName,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('Dashboard.admin', ['tab' => 'departments'])
+                         ->with('success', 'Department created successfully.');
+    }
+
+    /**
+     * Show the form for editing the specified department.
+     */
+    public function editDepartment(string $id)
+    {
+        $department = Department::findOrFail($id);
+        return view('Admin.EditDepartment', compact('department'));
+    }
+
+    /**
+     * Update the specified department in storage.
+     */
+    public function updateDepartment(Request $request, string $id)
+    {
+        $department = Department::findOrFail($id);
+
+        $data = $request->validate([
+            'code' => 'required|string|max:10|unique:departments,code,' . $department->id,
+            'name' => 'required|string|max:255',
+            'new_majors' => 'nullable|array',
+            'new_majors.*' => 'nullable|string|max:255',
+        ]);
+
+        $department->update([
+            'code' => $data['code'],
+            'name' => $data['name'],
+        ]);
+
+        // Create new majors if provided
+        if (!empty($data['new_majors'])) {
+            foreach ($data['new_majors'] as $majorName) {
+                if ($majorName) { // Skip empty values
+                    Major::create([
+                        'department_id' => $department->id,
+                        'name' => $majorName,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('Dashboard.admin', ['tab' => 'departments'])
+                         ->with('success', 'Department updated successfully.');
+    }
+
+    /**
+     * Remove the specified department from storage.
+     */
+    public function destroyDepartment(string $id)
+    {
+        $department = Department::findOrFail($id);
+
+        // Check if department has associated teachers
+        if ($department->users()->where('role', 'teacher')->exists()) {
+            return redirect()->route('Dashboard.admin', ['tab' => 'departments'])
+                             ->with('error', 'Cannot delete department with assigned teachers.');
+        }
+
+        $department->delete();
+
+        return redirect()->route('Dashboard.admin', ['tab' => 'departments'])
+                         ->with('success', 'Department deleted successfully.');
+    }
+
+    /**
+     * Get majors by department ID (for AJAX).
+     */
+    public function getMajorsByDepartment(string $departmentId)
+    {
+        $majors = Major::where('department_id', $departmentId)->orderBy('name')->get();
+        return response()->json($majors);
+    }
+
+    /**
+     * Delete a major.
+     */
+    public function destroyMajor(string $id)
+    {
+        $major = Major::findOrFail($id);
+        $departmentId = $major->department_id;
+
+        $major->delete();
+
+        return redirect()->route('admin.department.edit', $departmentId)
+                         ->with('success', 'Major deleted successfully.');
     }
 }

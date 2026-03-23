@@ -103,7 +103,8 @@ class TeacherController extends Controller
         $validatedData = $request->validate([
             'fullname' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
-            'department' => 'required|string|max:255',
+            'department_id' => 'required|exists:departments,id',
+            'major_id' => 'nullable|exists:majors,id',
             'subject' => 'required|string|max:255',
             'password' => 'required|string|min:8',
         ]);
@@ -114,7 +115,8 @@ class TeacherController extends Controller
         User::create([
             'full_name' => $validatedData['fullname'],
             'username' => $validatedData['username'],
-            'department' => $validatedData['department'],
+            'department_id' => $validatedData['department_id'],
+            'major_id' => $validatedData['major_id'] ?? null,
             'subject' => $validatedData['subject'],
             'role' => 'teacher',
             'password' => bcrypt($validatedData['password']),

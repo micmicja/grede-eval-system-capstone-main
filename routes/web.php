@@ -42,6 +42,19 @@ Route::middleware(['role:admin', 'no-cache'])->prefix('Admin')->group(function (
     Route::get('/counselor/{id}/edit', [AdminController::class, 'editCounselor'])->name('admin.counselor.edit');
     Route::put('/counselor/{id}', [AdminController::class, 'updateCounselor'])->name('admin.counselor.update');
     Route::delete('/counselor/{id}', [AdminController::class, 'destroyCounselor'])->name('admin.counselor.destroy');
+
+    // Department routes
+    Route::get('/department/create', [AdminController::class, 'createDepartment'])->name('admin.department.create');
+    Route::post('/department', [AdminController::class, 'storeDepartment'])->name('admin.department.store');
+    Route::get('/department/{id}/edit', [AdminController::class, 'editDepartment'])->name('admin.department.edit');
+    Route::put('/department/{id}', [AdminController::class, 'updateDepartment'])->name('admin.department.update');
+    Route::delete('/department/{id}', [AdminController::class, 'destroyDepartment'])->name('admin.department.destroy');
+
+    // Major routes
+    Route::delete('/major/{id}', [AdminController::class, 'destroyMajor'])->name('admin.major.destroy');
+
+    // Get majors by department (AJAX)
+    Route::get('/majors/{departmentId}', [AdminController::class, 'getMajorsByDepartment'])->name('admin.majors.byDepartment');
 });
 
 

@@ -22,7 +22,8 @@ class User extends Authenticatable
         'username',
         'password',
         'role',
-        'department',
+        'department_id',
+        'major_id',
         'subject',
     ];
 
@@ -53,6 +54,18 @@ class User extends Authenticatable
     public function observations()
     {
         return $this->hasMany(StudentObservation::class, 'teacher_id');
+    }
+
+    // Relationship with department
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    // Relationship with major
+    public function major()
+    {
+        return $this->belongsTo(Major::class);
     }
 
 

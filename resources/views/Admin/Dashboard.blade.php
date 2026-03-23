@@ -65,12 +65,29 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-3">
+                <div class="card stats-card bg-info text-white shadow">
+                    <div class="card-body">
+                        <h6 class="text-uppercase fw-bold">Total Departments</h6>
+                        <p class="display-6 fw-bold mb-0">{{$countedDepartments}}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{--  success message here --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        {{-- error message here --}}
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
@@ -85,6 +102,11 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="counselors-tab" data-bs-toggle="tab" data-bs-target="#counselors" type="button" role="tab">
                     Counselors
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button" role="tab">
+                    Departments
                 </button>
             </li>
         </ul>
@@ -131,6 +153,7 @@
                                         <th>Full Name</th>
                                         <th>Username</th>
                                         <th>Department</th>
+                                        <th>Major</th>
                                         <th>Subject</th>
                                         <th>Actions</th>
                                     </tr>
@@ -144,7 +167,8 @@
                                                 <td>{{ $index + 1}}</td>
                                                 <td>{{ $teacher->full_name }}</td>
                                                 <td>{{ $teacher->username }}</td>
-                                                <td>{{ $teacher->department }}</td>
+                                                <td>{{ $teacher->department ? $teacher->department->code : 'N/A' }}</td>
+                                                <td>{{ $teacher->major ? $teacher->major->name : 'N/A' }}</td>
                                                 <td>{{ $teacher->subject }}</td>
                                                 <td>
                                                     <a href="{{ route('admin.teacher.edit', $teacher->id) }}" class="btn btn-warning btn-sm me-1">Edit</a>
@@ -156,10 +180,10 @@
                                                 </td>
                                             </tr>
                                         @endforeach
-                                        
+
                                     @else
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted py-4">No teachers found.</td>
+                                            <td colspan="7" class="text-center text-muted py-4">No teachers found.</td>
                                         </tr>
                                     @endif
 
@@ -244,6 +268,57 @@
                     </div>
                 </div>
             </div>
+
+            {{-- DEPARTMENTS TAB --}}
+            <div class="tab-pane fade" id="departments" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Department List</h5>
+                        <a href="{{ route('admin.department.create') }}" class="btn btn-info btn-sm">Add New Department</a>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Teachers</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @if ($departments && $departments->count() > 0)
+                                        @foreach ($departments as $index => $department)
+                                            <tr>
+                                                <td>{{ $index + 1}}</td>
+                                                <td><span class="badge bg-primary">{{ $department->code }}</span></td>
+                                                <td>{{ $department->name }}</td>
+                                                <td>{{ $department->users()->where('role', 'teacher')->count() }}</td>
+                                                <td>
+                                                    <a href="{{ route('admin.department.edit', $department->id) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+                                                    <form action="{{ route('admin.department.destroy', $department->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this department?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-danger btn-sm">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">No departments found.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -253,10 +328,13 @@
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const activeTab = urlParams.get('tab');
-            
+
             if (activeTab === 'counselors') {
                 const counselorsTab = new bootstrap.Tab(document.getElementById('counselors-tab'));
                 counselorsTab.show();
+            } else if (activeTab === 'departments') {
+                const departmentsTab = new bootstrap.Tab(document.getElementById('departments-tab'));
+                departmentsTab.show();
             }
         });
     </script>

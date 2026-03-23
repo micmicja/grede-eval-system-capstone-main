@@ -37,14 +37,27 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Department</label>
-                        <select class="form-control" name="department" required>
+                        <select class="form-control @error('department_id') is-invalid @enderror" name="department_id" id="department_id" required>
                             <option value="">Select Department</option>
-                            <option value="BSCS" {{ old('department', $teacher->department) == 'BSCS' ? 'selected' : '' }}>BSCS - Bachelor of Science in Computer Science</option>
-                            <option value="BAPS" {{ old('department', $teacher->department) == 'BAPS' ? 'selected' : '' }}>BAPS - Bachelor of Arts in Political Science</option>
-                            <option value="BSBA" {{ old('department', $teacher->department) == 'BSBA' ? 'selected' : '' }}>BSBA - Bachelor of Science in Business Administration</option>
-                            <option value="BEED" {{ old('department', $teacher->department) == 'BEED' ? 'selected' : '' }}>BEED - Bachelor of Elementary Education</option>
-                            <option value="BSED" {{ old('department', $teacher->department) == 'BSED' ? 'selected' : '' }}>BSED - Bachelor of Secondary Education</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" {{ old('department_id', $teacher->department_id) == $dept->id ? 'selected' : '' }}>
+                                    {{ $dept->code }} - {{ $dept->name }}
+                                </option>
+                            @endforeach
                         </select>
+                        @error('department_id')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6" id="major_container" style="display: none;">
+                        <label class="form-label">Major</label>
+                        <select class="form-control @error('major_id') is-invalid @enderror" name="major_id" id="major_id">
+                            <option value="">N/A</option>
+                        </select>
+                        @error('major_id')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="col-md-6">
@@ -70,5 +83,53 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const departmentSelect = document.getElementById('department_id');
+            const majorContainer = document.getElementById('major_container');
+            const majorSelect = document.getElementById('major_id');
+            const currentMajorId = {{ $teacher->major_id ?? 'null' }};
+
+            function loadMajors(departmentId, selectedMajorId = null) {
+                if (!departmentId) {
+                    majorContainer.style.display = 'none';
+                    majorSelect.innerHTML = '<option value="">N/A</option>';
+                    return;
+                }
+
+                // Fetch majors for selected department
+                fetch(`/Admin/majors/${departmentId}`)
+                    .then(response => response.json())
+                    .then(majors => {
+                        if (majors.length > 0) {
+                            majorContainer.style.display = 'block';
+                            majorSelect.innerHTML = '<option value="">Select Major</option>';
+                            majors.forEach(major => {
+                                const selected = selectedMajorId && major.id == selectedMajorId ? 'selected' : '';
+                                majorSelect.innerHTML += `<option value="${major.id}" ${selected}>${major.name}</option>`;
+                            });
+                        } else {
+                            majorContainer.style.display = 'none';
+                            majorSelect.innerHTML = '<option value="">N/A</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching majors:', error);
+                        majorContainer.style.display = 'none';
+                        majorSelect.innerHTML = '<option value="">N/A</option>';
+                    });
+            }
+
+            departmentSelect.addEventListener('change', function() {
+                loadMajors(this.value);
+            });
+
+            // Load majors on page load if department is selected
+            if (departmentSelect.value) {
+                loadMajors(departmentSelect.value, currentMajorId);
+            }
+        });
+    </script>
 
 </x-layouts.app>
