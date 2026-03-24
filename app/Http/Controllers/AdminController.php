@@ -244,7 +244,7 @@ class AdminController extends Controller
      */
     public function editDepartment(string $id)
     {
-        $department = Department::findOrFail($id);
+        $department = Department::with('majors')->findOrFail($id);
         return view('Admin.EditDepartment', compact('department'));
     }
 
