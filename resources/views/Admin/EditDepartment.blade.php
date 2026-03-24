@@ -87,11 +87,14 @@
                                 @foreach($department->majors as $major)
                                     <div class="existing-major">
                                         <span>{{ $major->name }}</span>
-                                        <form action="{{ route('admin.major.destroy', $major->id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this major?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
-                                        </form>
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm remove-existing-major-btn"
+                                            data-delete-url="{{ route('admin.major.destroy', $major->id) }}"
+                                            data-major-name="{{ $major->name }}"
+                                        >
+                                            Remove
+                                        </button>
                                     </div>
                                 @endforeach
                             </div>
@@ -99,7 +102,23 @@
 
                         <!-- New Majors -->
                         <div id="majors-container">
-                            <!-- Dynamic major fields will be added here -->
+                            @php
+                                $oldMajors = old('new_majors');
+                            @endphp
+
+                            @if(is_array($oldMajors) && count($oldMajors) > 0)
+                                @foreach($oldMajors as $major)
+                                    <div class="major-item">
+                                        <input type="text" class="form-control" name="new_majors[]" value="{{ $major }}" placeholder="Enter major name">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-major-btn">Remove</button>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="major-item">
+                                    <input type="text" class="form-control" name="new_majors[]" value="" placeholder="Enter major name">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-major-btn">Remove</button>
+                                </div>
+                            @endif
                         </div>
 
                         <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-major-btn">
@@ -113,6 +132,11 @@
                     <button type="submit" class="btn btn-primary px-4">Save Changes</button>
                 </div>
             </form>
+
+            <form id="delete-major-form" method="POST" style="display: none;">
+                @csrf
+                @method('DELETE')
+            </form>
         </div>
     </div>
 
@@ -120,6 +144,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('majors-container');
             const addBtn = document.getElementById('add-major-btn');
+            const deleteMajorForm = document.getElementById('delete-major-form');
 
             function addMajorField(value = '') {
                 const div = document.createElement('div');
@@ -139,14 +164,28 @@
                 addMajorField();
             });
 
-            // Restore old values if validation failed
-            @if(old('new_majors'))
-                @foreach(old('new_majors') as $major)
-                    @if($major)
-                        addMajorField('{{ $major }}');
-                    @endif
-                @endforeach
-            @endif
+            container.querySelectorAll('.remove-major-btn').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    button.closest('.major-item').remove();
+                });
+            });
+
+            document.querySelectorAll('.remove-existing-major-btn').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const deleteUrl = button.getAttribute('data-delete-url');
+                    const majorName = button.getAttribute('data-major-name') || 'this major';
+
+                    if (!deleteUrl) {
+                        return;
+                    }
+
+                    if (confirm(`Delete "${majorName}"?`)) {
+                        deleteMajorForm.action = deleteUrl;
+                        deleteMajorForm.submit();
+                    }
+                });
+            });
+
         });
     </script>
 
